@@ -6,6 +6,27 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+pub enum LanguageChoice {
+    #[default]
+    English,
+    Spanish,
+}
+
+impl LanguageChoice {
+    pub const ALL: [LanguageChoice; 2] = [Self::English, Self::Spanish];
+
+    /// Language names stay in their own language so the selector remains
+    /// usable after any language change.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::English => "English",
+            Self::Spanish => "Español",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum ThemeChoice {
     #[default]
     Dark,
@@ -44,11 +65,21 @@ impl ThemeChoice {
             Self::System => "Follow system",
         }
     }
+
+    pub fn text_key(self) -> crate::i18n::TextKey {
+        match self {
+            Self::Dark => crate::i18n::TextKey::SettingsThemeDark,
+            Self::Light => crate::i18n::TextKey::SettingsThemeLight,
+            Self::System => crate::i18n::TextKey::SettingsThemeSystem,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
+    /// Language used for Fastpotify-owned interface text.
+    pub language: LanguageChoice,
     /// The Spotify Connect name other devices see.
     pub device_name: String,
     /// 96, 160, or 320 kbps.
@@ -156,6 +187,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            language: LanguageChoice::English,
             device_name: "Fastpotify".to_string(),
             bitrate: 320,
             normalisation: false,
@@ -270,7 +302,58 @@ impl Settings {
 
 #[cfg(test)]
 mod tests {
-    use super::Settings;
+    use super::{LanguageChoice, Settings};
+
+    #[test]
+    fn language_defaults_to_english() {
+        assert_eq!(LanguageChoice::default(), LanguageChoice::English);
+        assert_eq!(
+            LanguageChoice::ALL,
+            [LanguageChoice::English, LanguageChoice::Spanish]
+        );
+        assert_eq!(LanguageChoice::English.label(), "English");
+        assert_eq!(LanguageChoice::Spanish.label(), "Español");
+        let settings: Settings = serde_json::from_str("{}").unwrap();
+        assert_eq!(settings.language, LanguageChoice::English);
+    }
+
+    #[test]
+    fn language_uses_lowercase_saved_values() {
+        for (language, saved) in [
+            (LanguageChoice::English, "english"),
+            (LanguageChoice::Spanish, "spanish"),
+        ] {
+            let settings = Settings {
+                language,
+                ..Settings::default()
+            };
+            let json = serde_json::to_string(&settings).unwrap();
+            assert!(json.contains(&format!(r#""language":"{saved}""#)));
+            let restored: Settings = serde_json::from_str(&json).unwrap();
+            assert_eq!(restored.language, language);
+        }
+    }
+
+    #[test]
+    fn language_accepts_only_known_values() {
+        let english: Settings = serde_json::from_str(r#"{"language":"english"}"#).unwrap();
+        let spanish: Settings = serde_json::from_str(r#"{"language":"spanish"}"#).unwrap();
+        assert_eq!(english.language, LanguageChoice::English);
+        assert_eq!(spanish.language, LanguageChoice::Spanish);
+        assert!(serde_json::from_str::<Settings>(r#"{"language":"french"}"#).is_err());
+    }
+
+    #[test]
+    fn an_unknown_language_keeps_the_invalid_file_behavior() {
+        let path = std::env::temp_dir().join(format!(
+            "fastpotify-invalid-language-test-{}.json",
+            std::process::id()
+        ));
+        std::fs::write(&path, r#"{"device_name":"Custom","language":"french"}"#).unwrap();
+        let settings = Settings::load(&path);
+        let _ = std::fs::remove_file(path);
+        assert_eq!(settings, Settings::default());
+    }
 
     #[test]
     fn older_settings_keep_the_sidebar_visible() {

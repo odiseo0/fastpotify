@@ -4,8 +4,9 @@ use egui::{Align, CornerRadius, Frame, Layout, Margin, Stroke, Vec2};
 
 use crate::api::models::pick_image;
 use crate::app::App;
+use crate::i18n::{Message, TextKey};
 use crate::model::{Action, Dialog};
-use crate::settings::ThemeChoice;
+use crate::settings::{LanguageChoice, ThemeChoice};
 use crate::theme::{self, Icon, Palette};
 
 use super::widgets;
@@ -39,8 +40,14 @@ fn section(
 
 pub fn show(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     ui.add_space(8.0);
-    theme::text(ui, "Settings", theme::bold(28.0), palette.text);
+    theme::text(
+        ui,
+        translator.text(TextKey::SettingsTitle),
+        theme::bold(28.0),
+        palette.text,
+    );
     ui.add_space(4.0);
     let dirty_id = egui::Id::new(PLAYBACK_DIRTY_ID);
     let mut playback_dirty = ui
@@ -48,7 +55,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         .unwrap_or(false);
     let mut changed = false;
 
-    section(ui, &palette, "Account", |ui| {
+    let heading = translator.text(TextKey::SettingsAccountHeading);
+    section(ui, &palette, heading, |ui| {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 14.0;
             let avatar = app
@@ -68,8 +76,10 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     .as_ref()
                     .and_then(|user| user.product.clone())
                     .map(|product| match product.as_str() {
-                        "premium" => "Spotify Premium".to_string(),
-                        "free" | "open" => "Spotify Free, local playback needs Premium".to_string(),
+                        "premium" => translator.text(TextKey::SettingsSpotifyPremium).to_string(),
+                        "free" | "open" => translator
+                            .text(TextKey::SettingsSpotifyFreeNeedsPremium)
+                            .to_string(),
                         other => other.to_string(),
                     })
                     .unwrap_or_default();
@@ -79,14 +89,21 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 {
                     theme::text(
                         ui,
-                        format!("Connected as {username}"),
+                        translator.message(&Message::SettingsConnectedAs { username }),
                         theme::regular(12.0),
                         palette.dim,
                     );
                 }
             });
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                if theme::pill_button(ui, &palette, "Sign out", false).clicked() {
+                if theme::pill_button(
+                    ui,
+                    &palette,
+                    translator.text(TextKey::SettingsSignOut),
+                    false,
+                )
+                .clicked()
+                {
                     app.actions.push(Action::SignOut);
                 }
             });
@@ -96,8 +113,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Personal Spotify app",
-            "Use a personal Development Mode app for a separate API quota. The shared app stays active.",
+            translator.text(TextKey::SettingsPersonalAppLabel),
+            translator.text(TextKey::SettingsPersonalAppDetail),
             |ui| {
                 let response = Frame::new()
                     .fill(palette.surface)
@@ -106,7 +123,12 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     .show(ui, |ui| {
                         ui.add(
                             egui::TextEdit::singleline(&mut client_id)
-                                .hint_text(egui::RichText::new("Client ID").color(palette.dim))
+                                .hint_text(
+                                    egui::RichText::new(
+                                        translator.text(TextKey::SettingsClientIdHint),
+                                    )
+                                    .color(palette.dim),
+                                )
                                 .font(theme::regular(13.0))
                                 .frame(egui::Frame::NONE)
                                 .desired_width(200.0),
@@ -123,10 +145,17 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Create an app",
-            "Create one for free in Spotify's developer dashboard.",
+            translator.text(TextKey::SettingsCreateAppLabel),
+            translator.text(TextKey::SettingsCreateAppDetail),
             |ui| {
-                if theme::pill_button(ui, &palette, "Setup guide", false).clicked() {
+                if theme::pill_button(
+                    ui,
+                    &palette,
+                    translator.text(TextKey::SettingsSetupGuide),
+                    false,
+                )
+                .clicked()
+                {
                     app.actions.push(Action::OpenUrl(
                         "https://fastpotify.rocks/make-it-even-faster/".into(),
                     ));
@@ -147,10 +176,17 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             widgets::setting_row(
                 ui,
                 &palette,
-                "Personal app ready",
-                "Supported requests use your app. Other requests use the shared app.",
+                translator.text(TextKey::SettingsPersonalAppReadyLabel),
+                translator.text(TextKey::SettingsPersonalAppReadyDetail),
                 |ui| {
-                    if theme::pill_button(ui, &palette, "Remove", false).clicked() {
+                    if theme::pill_button(
+                        ui,
+                        &palette,
+                        translator.text(TextKey::SettingsRemove),
+                        false,
+                    )
+                    .clicked()
+                    {
                         app.settings.web_client_id = None;
                         app.actions.push(Action::ConfigurePersonalWebApp);
                     }
@@ -160,10 +196,17 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             widgets::setting_row(
                 ui,
                 &palette,
-                "Authorize your personal app",
-                "Spotify opens in your browser to verify the account.",
+                translator.text(TextKey::SettingsAuthorizePersonalAppLabel),
+                translator.text(TextKey::SettingsAuthorizePersonalAppDetail),
                 |ui| {
-                    if theme::pill_button(ui, &palette, "Authorize", true).clicked() {
+                    if theme::pill_button(
+                        ui,
+                        &palette,
+                        translator.text(TextKey::SettingsAuthorize),
+                        true,
+                    )
+                    .clicked()
+                    {
                         app.actions.push(Action::ConfigurePersonalWebApp);
                     }
                 },
@@ -172,10 +215,17 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             widgets::setting_row(
                 ui,
                 &palette,
-                "Remove personal app",
-                "Shared access remains signed in.",
+                translator.text(TextKey::SettingsRemovePersonalAppLabel),
+                translator.text(TextKey::SettingsRemovePersonalAppDetail),
                 |ui| {
-                    if theme::pill_button(ui, &palette, "Remove", false).clicked() {
+                    if theme::pill_button(
+                        ui,
+                        &palette,
+                        translator.text(TextKey::SettingsRemove),
+                        false,
+                    )
+                    .clicked()
+                    {
                         app.actions.push(Action::ConfigurePersonalWebApp);
                     }
                 },
@@ -183,38 +233,60 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         }
     });
 
-    section(ui, &palette, "Playback on this computer", |ui| {
+    let heading = translator.text(TextKey::SettingsPlaybackHeading);
+    section(ui, &palette, heading, |ui| {
         let (status, detail, action) = match &app.local_playback {
             crate::backend::LocalPlayback::Ready { .. } => (
-                "Ready",
-                "This computer is a Spotify Connect device.".to_string(),
+                translator.text(TextKey::SettingsPlaybackReady),
+                translator
+                    .text(TextKey::SettingsPlaybackReadyDetail)
+                    .to_string(),
                 None,
             ),
             crate::backend::LocalPlayback::Authorizing => (
-                "Setting up",
-                "Finish authorizing in your browser.".to_string(),
+                translator.text(TextKey::SettingsPlaybackSettingUp),
+                translator
+                    .text(TextKey::SettingsPlaybackSettingUpDetail)
+                    .to_string(),
                 None,
             ),
-            crate::backend::LocalPlayback::Connecting => {
-                ("Connecting", "Connecting to Spotify…".to_string(), None)
-            }
-            crate::backend::LocalPlayback::Failed(message) => {
-                ("Unavailable", message.clone(), Some("Try again"))
-            }
+            crate::backend::LocalPlayback::Connecting => (
+                translator.text(TextKey::SettingsPlaybackConnecting),
+                translator
+                    .text(TextKey::SettingsPlaybackConnectingDetail)
+                    .to_string(),
+                None,
+            ),
+            crate::backend::LocalPlayback::Failed(message) => (
+                translator.text(TextKey::SettingsPlaybackUnavailable),
+                message.clone(),
+                Some(translator.text(TextKey::SettingsTryAgain)),
+            ),
             crate::backend::LocalPlayback::Unavailable => (
-                "Not set up",
-                "Requires Spotify Premium and a one-time browser sign-in.".to_string(),
-                Some("Enable playback here"),
+                translator.text(TextKey::SettingsPlaybackNotSetUp),
+                translator
+                    .text(TextKey::SettingsPlaybackNotSetUpDetail)
+                    .to_string(),
+                Some(translator.text(TextKey::SettingsEnablePlayback)),
             ),
         };
-        widgets::setting_row(ui, &palette, &format!("Status: {status}"), &detail, |ui| {
+        let status = translator.message(&Message::SettingsPlaybackStatus {
+            status: status.to_string(),
+        });
+        widgets::setting_row(ui, &palette, &status, &detail, |ui| {
             if let Some(label) = action {
                 if theme::pill_button(ui, &palette, label, true).clicked() {
                     app.actions.push(Action::EnablePlayback);
                 }
             } else if app.local_ready
-                && theme::soft_button(ui, &palette, Some(Icon::Refresh), "Reconnect", false)
-                    .clicked()
+                && theme::soft_button(
+                    ui,
+                    &palette,
+                    Some(Icon::Refresh),
+                    translator.text(TextKey::SettingsReconnect),
+                    false,
+                )
+                .clicked()
             {
                 app.actions.push(Action::RestartEngine);
             }
@@ -222,8 +294,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Device name",
-            "How this computer appears in Spotify Connect.",
+            translator.text(TextKey::SettingsDeviceNameLabel),
+            translator.text(TextKey::SettingsDeviceNameDetail),
             |ui| {
                 let response = Frame::new()
                     .fill(palette.surface)
@@ -247,15 +319,15 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Audio quality",
-            "Higher bitrates use more data and cache space.",
+            translator.text(TextKey::SettingsAudioQualityLabel),
+            translator.text(TextKey::SettingsAudioQualityDetail),
             |ui| {
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 6.0;
                     for (kbps, label) in [
-                        (320u16, "Very high · 320 kbps"),
-                        (160, "High · 160 kbps"),
-                        (96, "Normal · 96 kbps"),
+                        (320u16, translator.text(TextKey::SettingsQualityVeryHigh)),
+                        (160, translator.text(TextKey::SettingsQualityHigh)),
+                        (96, translator.text(TextKey::SettingsQualityNormal)),
                     ] {
                         if theme::soft_button(
                             ui,
@@ -278,13 +350,13 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Normalize volume",
-            "Keep loud and quiet tracks at a similar level.",
+            translator.text(TextKey::SettingsNormalizeVolumeLabel),
+            translator.text(TextKey::SettingsNormalizeVolumeDetail),
             |ui| {
                 if widgets::switch(
                     ui,
                     &palette,
-                    "Normalize volume",
+                    translator.text(TextKey::SettingsNormalizeVolumeLabel),
                     &mut app.settings.normalisation,
                 )
                 .changed()
@@ -297,23 +369,16 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Autoplay",
-            "Keep playing similar songs when your music ends.",
+            translator.text(TextKey::SettingsAutoplayLabel),
+            translator.text(TextKey::SettingsAutoplayDetail),
             |ui| {
-                if widgets::switch(ui, &palette, "Autoplay", &mut app.settings.autoplay).changed() {
-                    changed = true;
-                    playback_dirty = true;
-                }
-            },
-        );
-        widgets::setting_row(
-            ui,
-            &palette,
-            "Gapless playback",
-            "Play tracks without silence between them.",
-            |ui| {
-                if widgets::switch(ui, &palette, "Gapless playback", &mut app.settings.gapless)
-                    .changed()
+                if widgets::switch(
+                    ui,
+                    &palette,
+                    translator.text(TextKey::SettingsAutoplayLabel),
+                    &mut app.settings.autoplay,
+                )
+                .changed()
                 {
                     changed = true;
                     playback_dirty = true;
@@ -323,16 +388,35 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Keep music playing when the window closes",
+            translator.text(TextKey::SettingsGaplessLabel),
+            translator.text(TextKey::SettingsGaplessDetail),
+            |ui| {
+                if widgets::switch(
+                    ui,
+                    &palette,
+                    translator.text(TextKey::SettingsGaplessLabel),
+                    &mut app.settings.gapless,
+                )
+                .changed()
+                {
+                    changed = true;
+                    playback_dirty = true;
+                }
+            },
+        );
+        widgets::setting_row(
+            ui,
+            &palette,
+            translator.text(TextKey::SettingsKeepPlayingLabel),
             super::keys::platform_shortcut(
-                "Fastpotify hides to the system tray. Quit from the tray menu or with Ctrl+Q.",
-                "Fastpotify hides to the system tray. Quit from the tray menu or with Cmd+Q.",
+                translator.text(TextKey::SettingsKeepPlayingDetailControl),
+                translator.text(TextKey::SettingsKeepPlayingDetailCommand),
             ),
             |ui| {
                 if widgets::switch(
                     ui,
                     &palette,
-                    "Keep music playing when the window closes",
+                    translator.text(TextKey::SettingsKeepPlayingLabel),
                     &mut app.settings.keep_playing_in_background,
                 )
                 .changed()
@@ -344,13 +428,13 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Automatic update checks",
-            "Checks GitHub once a day. No personal data is sent.",
+            translator.text(TextKey::SettingsUpdateChecksLabel),
+            translator.text(TextKey::SettingsUpdateChecksDetail),
             |ui| {
                 if widgets::switch(
                     ui,
                     &palette,
-                    "Automatic update checks",
+                    translator.text(TextKey::SettingsUpdateChecksLabel),
                     &mut app.settings.check_for_updates,
                 )
                 .changed()
@@ -363,8 +447,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             widgets::setting_row(
                 ui,
                 &palette,
-                "Audio output",
-                "PulseAudio also covers PipeWire. Rodio talks to ALSA directly.",
+                translator.text(TextKey::SettingsAudioOutputLabel),
+                translator.text(TextKey::SettingsAudioOutputDetail),
                 |ui| {
                     let current = app
                         .settings
@@ -395,8 +479,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Output buffer",
-            "More buffering can prevent clicks on busy computers. Less buffering makes controls respond sooner.",
+            translator.text(TextKey::SettingsOutputBufferLabel),
+            translator.text(TextKey::SettingsOutputBufferDetail),
             |ui| {
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 6.0;
@@ -417,14 +501,19 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Audio cache",
-            "Save downloaded audio for later playback.",
+            translator.text(TextKey::SettingsAudioCacheLabel),
+            translator.text(TextKey::SettingsAudioCacheDetail),
             |ui| {
                 // The control area lays out right-to-left: add the rightmost item first.
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 6.0;
-                    if widgets::switch(ui, &palette, "Audio cache", &mut app.settings.audio_cache)
-                        .changed()
+                    if widgets::switch(
+                        ui,
+                        &palette,
+                        translator.text(TextKey::SettingsAudioCacheLabel),
+                        &mut app.settings.audio_cache,
+                    )
+                    .changed()
                     {
                         changed = true;
                         playback_dirty = true;
@@ -454,52 +543,96 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             if playback_dirty {
-                if theme::pill_button(ui, &palette, "Apply and restart playback", true).clicked() {
+                if theme::pill_button(
+                    ui,
+                    &palette,
+                    translator.text(TextKey::SettingsApplyRestartPlayback),
+                    true,
+                )
+                .clicked()
+                {
                     app.actions.push(Action::RestartEngine);
                     playback_dirty = false;
                 }
                 theme::subtle(
                     ui,
                     &palette,
-                    "Restart local playback to apply these settings.",
+                    translator.text(TextKey::SettingsRestartPlaybackDetail),
                 );
             } else {
-                theme::subtle(ui, &palette, "Playback settings applied.");
+                theme::subtle(
+                    ui,
+                    &palette,
+                    translator.text(TextKey::SettingsPlaybackApplied),
+                );
             }
         });
     });
 
-    section(ui, &palette, "Appearance", |ui| {
-        widgets::setting_row(ui, &palette, "Theme", "", |ui| {
-            ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = 6.0;
-                for choice in ThemeChoice::ALL {
-                    if theme::soft_button(
-                        ui,
-                        &palette,
-                        None,
-                        choice.label(),
-                        app.settings.theme == choice,
-                    )
-                    .clicked()
-                        && app.settings.theme != choice
-                    {
-                        app.settings.theme = choice;
-                        changed = true;
-                    }
-                }
-            });
-        });
+    let heading = translator.text(TextKey::SettingsAppearanceHeading);
+    section(ui, &palette, heading, |ui| {
         widgets::setting_row(
             ui,
             &palette,
-            "Colour from album art",
-            "Use the current cover's colour on pages and the player bar.",
+            translator.text(TextKey::SettingsLanguageLabel),
+            "",
+            |ui| {
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = 6.0;
+                    for choice in LanguageChoice::ALL {
+                        if theme::soft_button(
+                            ui,
+                            &palette,
+                            None,
+                            choice.label(),
+                            app.settings.language == choice,
+                        )
+                        .clicked()
+                            && app.settings.language != choice
+                        {
+                            app.settings.language = choice;
+                            changed = true;
+                        }
+                    }
+                });
+            },
+        );
+        widgets::setting_row(
+            ui,
+            &palette,
+            translator.text(TextKey::SettingsThemeLabel),
+            "",
+            |ui| {
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = 6.0;
+                    for choice in ThemeChoice::ALL {
+                        if theme::soft_button(
+                            ui,
+                            &palette,
+                            None,
+                            translator.text(choice.text_key()),
+                            app.settings.theme == choice,
+                        )
+                        .clicked()
+                            && app.settings.theme != choice
+                        {
+                            app.settings.theme = choice;
+                            changed = true;
+                        }
+                    }
+                });
+            },
+        );
+        widgets::setting_row(
+            ui,
+            &palette,
+            translator.text(TextKey::SettingsColourFromArtLabel),
+            translator.text(TextKey::SettingsColourFromArtDetail),
             |ui| {
                 if widgets::switch(
                     ui,
                     &palette,
-                    "Colour from album art",
+                    translator.text(TextKey::SettingsColourFromArtLabel),
                     &mut app.settings.accent_from_art,
                 )
                 .changed()
@@ -511,13 +644,13 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Compact library sidebar",
-            "Show names without covers in the sidebar.",
+            translator.text(TextKey::SettingsCompactSidebarLabel),
+            translator.text(TextKey::SettingsCompactSidebarDetail),
             |ui| {
                 if widgets::switch(
                     ui,
                     &palette,
-                    "Compact library sidebar",
+                    translator.text(TextKey::SettingsCompactSidebarLabel),
                     &mut app.settings.sidebar_compact,
                 )
                 .changed()
@@ -529,13 +662,13 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Compact track list",
-            "Show each track on one line without a cover.",
+            translator.text(TextKey::SettingsCompactTrackListLabel),
+            translator.text(TextKey::SettingsCompactTrackListDetail),
             |ui| {
                 if widgets::switch(
                     ui,
                     &palette,
-                    "Compact track list",
+                    translator.text(TextKey::SettingsCompactTrackListLabel),
                     &mut app.settings.tracklist_compact,
                 )
                 .changed()
@@ -547,10 +680,10 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Interface zoom",
+            translator.text(TextKey::SettingsZoomLabel),
             super::keys::platform_shortcut(
-                "Ctrl+Plus and Ctrl+Minus work anywhere; Ctrl+0 resets.",
-                "Cmd+Plus and Cmd+Minus work anywhere; Cmd+0 resets.",
+                translator.text(TextKey::SettingsZoomDetailControl),
+                translator.text(TextKey::SettingsZoomDetailCommand),
             ),
             |ui| {
                 ui.horizontal(|ui| {
@@ -578,36 +711,50 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         );
     });
 
-    section(ui, &palette, "Winamp skins", |ui| {
+    let heading = translator.text(TextKey::SettingsWinampHeading);
+    section(ui, &palette, heading, |ui| {
         widgets::setting_row(
             ui,
             &palette,
-            "Mini player",
+            translator.text(TextKey::SettingsMiniPlayerLabel),
             super::keys::platform_shortcut(
-                "Use classic Winamp .wsz skins. Press Ctrl+M or click the skin logo to return. Drop a skin on either window to add it.",
-                "Use classic Winamp .wsz skins. Press Cmd+Shift+M or click the skin logo to return. Drop a skin on either window to add it.",
+                translator.text(TextKey::SettingsMiniPlayerDetailControl),
+                translator.text(TextKey::SettingsMiniPlayerDetailCommand),
             ),
             |ui| {
-                if theme::pill_button(ui, &palette, "Switch to it", true).clicked() {
+                if theme::pill_button(
+                    ui,
+                    &palette,
+                    translator.text(TextKey::SettingsSwitchToIt),
+                    true,
+                )
+                .clicked()
+                {
                     app.actions.push(Action::ToggleWinampWindow);
                 }
             },
         );
         let folder = app.dirs.skins_dir();
         app.winamp.refresh_choices(&folder);
+        let skin_folder = translator.message(&Message::SettingsSkinFolder {
+            path: folder.display().to_string(),
+        });
         widgets::setting_row(
             ui,
             &palette,
-            "Skin",
-            &format!(
-                "Installed skins are in {}. Find more at the Winamp Skin Museum.",
-                folder.display()
-            ),
+            translator.text(TextKey::SettingsSkinLabel),
+            &skin_folder,
             |ui| {
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 6.0;
-                    if theme::soft_button(ui, &palette, Some(Icon::Globe), "Skin Museum", false)
-                        .clicked()
+                    if theme::soft_button(
+                        ui,
+                        &palette,
+                        Some(Icon::Globe),
+                        translator.text(TextKey::SettingsSkinMuseum),
+                        false,
+                    )
+                    .clicked()
                     {
                         app.actions
                             .push(Action::OpenUrl("https://skins.webamp.org/".into()));
@@ -616,7 +763,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                         ui,
                         &palette,
                         Some(Icon::ExternalLink),
-                        "Open folder",
+                        translator.text(TextKey::SettingsOpenFolder),
                         false,
                     )
                     .clicked()
@@ -652,8 +799,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Size",
-            "Whole-number scaling keeps skin pixels sharp.",
+            translator.text(TextKey::SettingsSkinSizeLabel),
+            translator.text(TextKey::SettingsSkinSizeDetail),
             |ui| {
                 let scale =
                     crate::winamp::WinampState::scale(&app.settings, ui.ctx().pixels_per_point());
@@ -674,29 +821,44 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Always on top",
-            "Keep the Winamp window above everything else.",
+            translator.text(TextKey::SettingsAlwaysOnTopLabel),
+            translator.text(TextKey::SettingsAlwaysOnTopDetail),
             |ui| {
                 let mut on_top = app.settings.winamp_on_top;
-                if widgets::switch(ui, &palette, "Always on top", &mut on_top).changed() {
+                if widgets::switch(
+                    ui,
+                    &palette,
+                    translator.text(TextKey::SettingsAlwaysOnTopLabel),
+                    &mut on_top,
+                )
+                .changed()
+                {
                     app.actions.push(Action::ToggleWinampOnTop);
                 }
             },
         );
     });
 
-    section(ui, &palette, "MilkDrop", |ui| {
+    let heading = translator.text(TextKey::SettingsMilkdropHeading);
+    section(ui, &palette, heading, |ui| {
         widgets::setting_row(
             ui,
             &palette,
-            "MilkDrop window",
+            translator.text(TextKey::SettingsMilkdropWindowLabel),
             super::keys::platform_shortcut(
-                "A projectM visualiser for local playback. Open it here, from the top bar, with Ctrl+Shift+K, or from the mini player's V menu. Press ? or F1 for its shortcuts.",
-                "A projectM visualiser for local playback. Open it here, from the top bar, with Cmd+Shift+K, or from the mini player's V menu. Press ? or F1 for its shortcuts.",
+                translator.text(TextKey::SettingsMilkdropWindowDetailControl),
+                translator.text(TextKey::SettingsMilkdropWindowDetailCommand),
             ),
             |ui| {
                 let mut open = app.settings.milkdrop_open;
-                if widgets::switch(ui, &palette, "MilkDrop window", &mut open).changed() {
+                if widgets::switch(
+                    ui,
+                    &palette,
+                    translator.text(TextKey::SettingsMilkdropWindowLabel),
+                    &mut open,
+                )
+                .changed()
+                {
                     app.actions.push(Action::ToggleWinampMilkdrop);
                 }
             },
@@ -705,19 +867,15 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         app.winamp.presets.refresh(&folder);
         let count = app.winamp.presets.count();
         let downloading = app.winamp.presets.downloading();
+        let preset_folder = translator.message(&Message::SettingsPresetFolder {
+            count,
+            path: folder.display().to_string(),
+        });
         widgets::setting_row(
             ui,
             &palette,
-            "Presets",
-            &format!(
-                "{} in {}. Add .milk files here. Fastpotify downloads presets when MilkDrop first opens with an empty folder.",
-                match count {
-                    0 => "None yet".to_string(),
-                    1 => "One preset".to_string(),
-                    n => format!("{n} presets"),
-                },
-                folder.display(),
-            ),
+            translator.text(TextKey::SettingsPresetsLabel),
+            &preset_folder,
             |_ui| {},
         );
         // Three buttons are wider than a row's control slot; they get a
@@ -726,19 +884,33 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             ui.spacing_mut().item_spacing.x = 6.0;
             for (index, pack) in crate::milkdrop::PACKS.iter().enumerate() {
                 let label = match downloading {
-                    Some(name) if name == pack.name => "Fetching...".to_string(),
-                    _ => format!("Get {}", pack.name),
+                    Some(name) if name == pack.name => {
+                        translator.text(TextKey::SettingsFetching).to_string()
+                    }
+                    _ => translator.message(&Message::SettingsGetPresetPack {
+                        name: pack.name.to_string(),
+                    }),
                 };
+                let note = translator.text(match index {
+                    0 => TextKey::SettingsMilkdropOriginalPackNote,
+                    _ => TextKey::SettingsMilkdropCropPackNote,
+                });
                 if theme::soft_button(ui, &palette, Some(Icon::Globe), &label, false)
-                    .on_hover_text(pack.note)
+                    .on_hover_text(note)
                     .clicked()
                     && downloading.is_none()
                 {
                     app.actions.push(Action::DownloadMilkdropPack(index));
                 }
             }
-            if theme::soft_button(ui, &palette, Some(Icon::ExternalLink), "Open folder", false)
-                .clicked()
+            if theme::soft_button(
+                ui,
+                &palette,
+                Some(Icon::ExternalLink),
+                translator.text(TextKey::SettingsOpenFolder),
+                false,
+            )
+            .clicked()
             {
                 app.actions.push(Action::OpenMilkdropFolder);
             }
@@ -747,8 +919,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Time per preset",
-            "How long each preset plays before the next fades in.",
+            translator.text(TextKey::SettingsTimePerPresetLabel),
+            translator.text(TextKey::SettingsTimePerPresetDetail),
             |ui| {
                 let mut seconds = app.settings.milkdrop_seconds.clamp(2, 300);
                 let slider = egui::Slider::new(&mut seconds, 2..=300)
@@ -763,13 +935,12 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Frame rate",
+            translator.text(TextKey::SettingsFrameRateLabel),
             &match screen_hz {
-                0 => "Lower rates use fewer resources. Uncapped draws as fast as possible."
+                0 => translator
+                    .text(TextKey::SettingsFrameRateDetail)
                     .to_string(),
-                hz => format!(
-                    "Your screen refreshes at {hz} Hz. Higher rates do not add visible frames. Uncapped draws as fast as possible."
-                ),
+                hz => translator.message(&Message::SettingsScreenRefreshRate { hz }),
             },
             |ui| {
                 let fps = app.settings.milkdrop_fps;
@@ -780,10 +951,17 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 let mut at = stops.iter().position(|rate| *rate == fps).unwrap_or(1);
                 let labels: Vec<String> = stops
                     .iter()
-                    .map(|rate| crate::milkdrop::fps_label(*rate, screen_hz))
+                    .map(|rate| match *rate {
+                        0 => translator.text(TextKey::SettingsFpsUncapped).to_string(),
+                        rate if rate == screen_hz => {
+                            translator.message(&Message::SettingsFpsYourScreen { rate })
+                        }
+                        rate => translator.message(&Message::SettingsFps { rate }),
+                    })
                     .collect();
                 let shown = labels.clone();
                 let typed = stops.clone();
+                let uncapped = translator.text(TextKey::SettingsFpsUncapped).to_lowercase();
                 let slider = egui::Slider::new(&mut at, 0..=last)
                     .step_by(1.0)
                     .custom_formatter(move |value, _| {
@@ -796,7 +974,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                         // A rate typed in lands on the nearest stop, since
                         // the stops are all this dial can hold.
                         let text = text.trim().to_lowercase();
-                        if text.starts_with("un") {
+                        if text == uncapped {
                             return Some(typed.len().saturating_sub(1) as f64);
                         }
                         let wanted: u32 = text
@@ -824,13 +1002,17 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         widgets::setting_row(
             ui,
             &palette,
-            "Resolution",
-            "Half and Quarter use fewer resources and scale the image back up.",
+            translator.text(TextKey::SettingsResolutionLabel),
+            translator.text(TextKey::SettingsResolutionDetail),
             |ui| {
                 let current = app.settings.milkdrop_scale.max(1);
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 6.0;
-                    for (scale, label) in [(1u32, "Full"), (2, "Half"), (4, "Quarter")] {
+                    for (scale, label) in [
+                        (1u32, translator.text(TextKey::SettingsResolutionFull)),
+                        (2, translator.text(TextKey::SettingsResolutionHalf)),
+                        (4, translator.text(TextKey::SettingsResolutionQuarter)),
+                    ] {
                         if theme::soft_button(ui, &palette, None, label, scale == current).clicked()
                             && scale != current
                         {
@@ -842,15 +1024,23 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         );
     });
 
-    section(ui, &palette, "Equalizer", |ui| {
+    let heading = translator.text(TextKey::SettingsEqualizerHeading);
+    section(ui, &palette, heading, |ui| {
         widgets::setting_row(
             ui,
             &palette,
-            "Equalizer",
-            "A ten-band equalizer for playback on this computer. It does not affect other devices.",
+            translator.text(TextKey::SettingsEqualizerLabel),
+            translator.text(TextKey::SettingsEqualizerDetail),
             |ui| {
                 let mut on = app.settings.eq_on;
-                if widgets::switch(ui, &palette, "Equalizer", &mut on).changed() {
+                if widgets::switch(
+                    ui,
+                    &palette,
+                    translator.text(TextKey::SettingsEqualizerLabel),
+                    &mut on,
+                )
+                .changed()
+                {
                     app.actions.push(Action::ToggleEq);
                 }
             },
@@ -874,7 +1064,13 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             ui.spacing_mut().item_spacing.x = 14.0;
             let on = app.settings.eq_on;
             let mut preamp = app.settings.eq_preamp_db;
-            if eq_slider(ui, &palette, "Pre", &mut preamp, on) {
+            if eq_slider(
+                ui,
+                &palette,
+                translator.text(TextKey::SettingsPreampLabel),
+                &mut preamp,
+                on,
+            ) {
                 app.actions.push(Action::SetEqPreamp(preamp));
             }
             for (band, hz) in crate::eq::BANDS.iter().enumerate() {
@@ -886,69 +1082,91 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         });
     });
 
-    section(ui, &palette, "Storage", |ui| {
+    let heading = translator.text(TextKey::SettingsStorageHeading);
+    section(ui, &palette, heading, |ui| {
+        let artwork_path = translator.message(&Message::SettingsStoredIn {
+            path: app.dirs.art_cache_dir().display().to_string(),
+        });
         widgets::setting_row(
             ui,
             &palette,
-            "Artwork cache",
-            &format!("Stored in {}", app.dirs.art_cache_dir().display()),
+            translator.text(TextKey::SettingsArtworkCacheLabel),
+            &artwork_path,
             |ui| {
-                if theme::soft_button(ui, &palette, Some(Icon::Trash), "Clear artwork", false)
-                    .clicked()
+                if theme::soft_button(
+                    ui,
+                    &palette,
+                    Some(Icon::Trash),
+                    translator.text(TextKey::SettingsClearArtwork),
+                    false,
+                )
+                .clicked()
                 {
                     app.actions.push(Action::ClearArtCache);
                 }
             },
         );
+        let audio_path = translator.message(&Message::SettingsStoredIn {
+            path: app.dirs.audio_cache_dir().display().to_string(),
+        });
         widgets::setting_row(
             ui,
             &palette,
-            "Audio cache",
-            &format!("Stored in {}", app.dirs.audio_cache_dir().display()),
+            translator.text(TextKey::SettingsAudioCacheLabel),
+            &audio_path,
             |_| {},
         );
+        let history_path = translator.message(&Message::SettingsHistoryStoredIn {
+            path: app.dirs.history_file().display().to_string(),
+        });
         widgets::setting_row(
             ui,
             &palette,
-            "Play history",
-            &format!(
-                "Tracks played here are stored in {}. This file is never uploaded.",
-                app.dirs.history_file().display()
-            ),
+            translator.text(TextKey::SettingsPlayHistoryLabel),
+            &history_path,
             |ui| {
-                if theme::soft_button(ui, &palette, Some(Icon::Trash), "Clear history", false)
-                    .clicked()
+                if theme::soft_button(
+                    ui,
+                    &palette,
+                    Some(Icon::Trash),
+                    translator.text(TextKey::SettingsClearHistory),
+                    false,
+                )
+                .clicked()
                 {
                     app.actions.push(Action::ClearPlayHistory);
                 }
             },
         );
+        let credentials_path = translator.message(&Message::SettingsCredentialsStoredIn {
+            path: app.dirs.credentials_dir().display().to_string(),
+        });
         widgets::setting_row(
             ui,
             &palette,
-            "Sign-in",
-            &format!(
-                "Credentials are kept in {}",
-                app.dirs.credentials_dir().display()
-            ),
+            translator.text(TextKey::SettingsSignInLabel),
+            &credentials_path,
             |_| {},
         );
     });
 
-    section(ui, &palette, "About", |ui| {
+    let heading = translator.text(TextKey::SettingsAboutHeading);
+    section(ui, &palette, heading, |ui| {
         ui.horizontal(|ui| {
             let (logo, _) = ui.allocate_exact_size(Vec2::splat(40.0), egui::Sense::hover());
             theme::logo(ui, logo.center(), 40.0, palette.accent, palette.on_accent);
             ui.vertical(|ui| {
                 theme::text(
                     ui,
-                    format!("Fastpotify {}", env!("CARGO_PKG_VERSION")),
+                    translator.message(&Message::SettingsVersion {
+                        version: env!("CARGO_PKG_VERSION").to_string(),
+                    }),
                     theme::semibold(15.0),
                     palette.text,
                 );
                 theme::text(
                     ui,
-                    "Built with Rust, egui, and librespot. Not affiliated with Spotify.",
+                    translator.text(TextKey::SettingsAboutDetail),
                     theme::regular(13.0),
                     palette.secondary,
                 );
@@ -958,22 +1176,34 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 8.0;
             let check_label = if app.update_checking {
-                "Checking…"
+                translator.text(TextKey::SettingsCheckingUpdates)
             } else {
-                "Check for updates"
+                translator.text(TextKey::SettingsCheckForUpdates)
             };
             if theme::soft_button(ui, &palette, Some(Icon::Refresh), check_label, false).clicked()
                 && !app.update_checking
             {
                 app.actions.push(Action::CheckForUpdates);
             }
-            if theme::soft_button(ui, &palette, Some(Icon::Info), "Keyboard shortcuts", false)
-                .clicked()
+            if theme::soft_button(
+                ui,
+                &palette,
+                Some(Icon::Info),
+                translator.text(TextKey::SettingsKeyboardShortcuts),
+                false,
+            )
+            .clicked()
             {
                 app.actions.push(Action::ShowDialog(Dialog::Shortcuts));
             }
-            if theme::soft_button(ui, &palette, Some(Icon::ExternalLink), "Source code", false)
-                .clicked()
+            if theme::soft_button(
+                ui,
+                &palette,
+                Some(Icon::ExternalLink),
+                translator.text(TextKey::SettingsSourceCode),
+                false,
+            )
+            .clicked()
             {
                 ui.ctx()
                     .open_url(egui::OpenUrl::new_tab(env!("CARGO_PKG_REPOSITORY")));

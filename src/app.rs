@@ -15,6 +15,7 @@ use crate::backend::{
     ApiRequest, ApiResponse, AuthStatus, Backend, Command, Event, LocalPlayback, LyricsRequest,
     PLAYLIST_PAGE_SIZE, RecentsFor, RemoteAction, Waker,
 };
+use crate::i18n::Translator;
 use crate::media::{MediaCommand, MediaState, MediaTrack};
 use crate::media_controls::MediaService;
 use crate::model::QueueTab;
@@ -161,6 +162,9 @@ struct Listening {
 pub struct App {
     pub dirs: AppDirs,
     pub settings: Settings,
+    /// Language currently applied to app-owned interface text. The selected
+    /// setting remains separate so SettingsChanged can detect a real change.
+    pub translator: Translator,
     settings_dirty: bool,
     last_settings_save: Instant,
     pub backend: Backend,
@@ -445,6 +449,7 @@ const GLIDE_STOP: f32 = 40.0;
 
 impl App {
     pub fn new(waker: &Waker, dirs: AppDirs, settings: Settings, options: AppOptions) -> Self {
+        let translator = Translator::new(settings.language);
         let plays = crate::history::History::load(&dirs.history_file());
         let tap = crate::vis::AudioTap::new();
         let eq = crate::eq::shared();
@@ -494,6 +499,7 @@ impl App {
         let mut app = Self {
             dirs,
             settings,
+            translator,
             settings_dirty: false,
             last_settings_save: Instant::now(),
             backend,
@@ -5765,7 +5771,16 @@ impl App {
             }
             Action::CheckForUpdates => self.check_for_updates(true),
             Action::SettingsChanged => {
+                let language_changed = self.translator.language() != self.settings.language;
+                if language_changed {
+                    self.translator = Translator::new(self.settings.language);
+                }
                 self.settings_dirty = true;
+                if language_changed {
+                    self.save_settings();
+                    self.toasts.clear();
+                    ctx.request_repaint();
+                }
                 ctx.set_theme(match self.settings.theme {
                     ThemeChoice::Dark => egui::ThemePreference::Dark,
                     ThemeChoice::Light => egui::ThemePreference::Light,
@@ -7838,6 +7853,10 @@ mod tests {
     }
 
     fn test_app(name: &str) -> App {
+        test_app_with_settings(name, Settings::default())
+    }
+
+    fn test_app_with_settings(name: &str, settings: Settings) -> App {
         let root =
             std::env::temp_dir().join(format!("fastpotify-{name}-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
@@ -7848,12 +7867,64 @@ mod tests {
                 state: root.join("state"),
                 cache: root.join("cache"),
             },
-            Settings::default(),
+            settings,
             AppOptions {
                 media_controls: false,
                 tray: false,
             },
         )
+    }
+
+    #[test]
+    fn app_starts_with_the_saved_language() {
+        let app = test_app_with_settings(
+            "saved-language",
+            Settings {
+                language: crate::settings::LanguageChoice::Spanish,
+                ..Settings::default()
+            },
+        );
+        assert_eq!(
+            app.translator.language(),
+            crate::settings::LanguageChoice::Spanish
+        );
+    }
+
+    #[test]
+    fn changing_language_applies_saves_and_clears_old_toasts() {
+        let mut app = test_app("change-language");
+        app.toast("old language");
+        app.dialog = Some(Dialog::Shortcuts);
+        app.settings.language = crate::settings::LanguageChoice::Spanish;
+        app.actions.push(Action::SettingsChanged);
+
+        app.apply_actions(&egui::Context::default());
+
+        assert_eq!(
+            app.translator.language(),
+            crate::settings::LanguageChoice::Spanish
+        );
+        assert!(app.toasts.is_empty());
+        assert!(matches!(app.dialog, Some(Dialog::Shortcuts)));
+        let saved = Settings::load(&app.dirs.settings_file());
+        assert_eq!(saved.language, crate::settings::LanguageChoice::Spanish);
+        assert!(!app.settings_dirty);
+    }
+
+    #[test]
+    fn applying_other_settings_does_not_clear_current_language_toasts() {
+        let mut app = test_app("same-language");
+        app.toast("keep this");
+        app.actions.push(Action::SettingsChanged);
+
+        app.apply_actions(&egui::Context::default());
+
+        assert_eq!(app.toasts.len(), 1);
+        assert_eq!(
+            app.translator.language(),
+            crate::settings::LanguageChoice::English
+        );
+        assert!(app.settings_dirty);
     }
 
     #[test]
