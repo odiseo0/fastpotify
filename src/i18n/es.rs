@@ -341,6 +341,17 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::SidebarUnpin => "TODO(es) Unpin",
         TextKey::SidebarPinTop => "TODO(es) Pin to top",
         TextKey::SidebarSortRecent => "TODO(es) Sort by recently played",
+        TextKey::SidebarHome => "TODO(es) Home",
+        TextKey::SidebarSearch => "TODO(es) Search",
+        TextKey::SidebarDefaultFolder => "TODO(es) Folder",
+        TextKey::SidebarFilterPlaylists => "TODO(es) Playlists",
+        TextKey::SidebarFilterAlbums => "TODO(es) Albums",
+        TextKey::SidebarFilterArtists => "TODO(es) Artists",
+        TextKey::SidebarFilterPodcasts => "TODO(es) Podcasts",
+        TextKey::SidebarLikedSongs => "TODO(es) Liked Songs",
+        TextKey::SidebarPlaylistKind => "TODO(es) Playlist",
+        TextKey::SidebarArtistKind => "TODO(es) Artist",
+        TextKey::SidebarPlay => "TODO(es) Play",
         TextKey::MenuPlayNext => "TODO(es) Play next",
         TextKey::MenuAddPlaylist => "TODO(es) Add to playlist",
         TextKey::MenuNewPlaylist => "TODO(es) New playlist",
@@ -511,13 +522,25 @@ pub(super) fn message(message: &Message) -> String {
             };
             format!("TODO(es) {named} {verb} already in “{playlist_name}”. {question}")
         }
-        Message::FolderPlaylistCount { count } => match count {
+        Message::SidebarFolderPlaylistCount { count } => match count {
             1 => "TODO(es) Folder • 1 playlist".to_string(),
             count => format!("TODO(es) Folder • {count} playlists"),
         },
-        Message::PlaylistSongCount { count } => match count {
+        Message::SidebarPlaylistSongCount { count } => match count {
             1 => "TODO(es) Playlist • 1 song".to_string(),
             count => format!("TODO(es) Playlist • {count} songs"),
+        },
+        Message::SidebarPlaylistBy { owner } => format!("TODO(es) Playlist • {owner}"),
+        Message::SidebarPodcastBy { publisher } => format!("TODO(es) Podcast • {publisher}"),
+        Message::SidebarAlbumBy { kind, artists } => format!("TODO(es) {kind} • {artists}"),
+        Message::SidebarFolderState { name, collapsed } => format!(
+            "TODO(es) {name}, folder, {}",
+            if *collapsed { "collapsed" } else { "expanded" }
+        ),
+        Message::SidebarPlayItem { name } => format!("TODO(es) Play {name}"),
+        Message::MenuSelectionCount { count } => match count {
+            1 => "TODO(es) 1 song".to_string(),
+            count => format!("TODO(es) {count} songs"),
         },
         Message::SortBy { label } => format!("TODO(es) Sort by {label}"),
         Message::CollectionNamedContributors { names } => {

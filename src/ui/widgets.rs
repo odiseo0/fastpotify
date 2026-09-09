@@ -340,11 +340,9 @@ pub fn picked_menu(ui: &mut Ui, app: &mut App, songs: &[PlayableItem]) {
     ui.horizontal(|ui| {
         ui.add_space(10.0);
         ui.label(
-            egui::RichText::new(translator.message(&Message::PlaylistSongCount {
-                count: count as u32,
-            }))
-            .font(theme::medium(12.0))
-            .color(palette.secondary),
+            egui::RichText::new(translator.message(&Message::MenuSelectionCount { count }))
+                .font(theme::medium(12.0))
+                .color(palette.secondary),
         );
     });
     ui.add_space(4.0);

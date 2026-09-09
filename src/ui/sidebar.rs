@@ -168,13 +168,15 @@ fn folder_rows(app: &App, user_id: &str, entries: &mut Vec<Entry>) {
                     entries.push(Entry {
                         image: None,
                         name: if name.is_empty() {
-                            "Folder".to_string()
+                            app.translator
+                                .text(TextKey::SidebarDefaultFolder)
+                                .to_string()
                         } else {
                             name.clone()
                         },
                         subtitle: app
                             .translator
-                            .message(&Message::FolderPlaylistCount { count }),
+                            .message(&Message::SidebarFolderPlaylistCount { count }),
                         page: Page::Home,
                         uri: String::new(),
                         round: false,
@@ -272,7 +274,7 @@ fn playlist_entry(
     Entry {
         image: pick_image(&playlist.images, 64).map(str::to_string),
         name: playlist.name.clone(),
-        subtitle: translator.message(&Message::SearchPlaylistBy {
+        subtitle: translator.message(&Message::SidebarPlaylistBy {
             owner: playlist.owner_name().to_string(),
         }),
         page: Page::Playlist(playlist.id.clone()),
@@ -328,7 +330,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
         ui,
         &palette,
         Icon::House,
-        translator.text(TextKey::CommonHome),
+        translator.text(TextKey::SidebarHome),
         page == Page::Home,
     )
     .clicked()
@@ -339,7 +341,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
         ui,
         &palette,
         Icon::Search,
-        translator.text(TextKey::CommonSearch),
+        translator.text(TextKey::SidebarSearch),
         page == Page::Search,
     )
     .clicked()
@@ -433,10 +435,22 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(6.0, 6.0);
         for (value, label) in [
-            (Filter::Playlists, translator.text(TextKey::CommonPlaylists)),
-            (Filter::Albums, translator.text(TextKey::CommonAlbums)),
-            (Filter::Artists, translator.text(TextKey::CommonArtists)),
-            (Filter::Podcasts, translator.text(TextKey::CommonPodcasts)),
+            (
+                Filter::Playlists,
+                translator.text(TextKey::SidebarFilterPlaylists),
+            ),
+            (
+                Filter::Albums,
+                translator.text(TextKey::SidebarFilterAlbums),
+            ),
+            (
+                Filter::Artists,
+                translator.text(TextKey::SidebarFilterArtists),
+            ),
+            (
+                Filter::Podcasts,
+                translator.text(TextKey::SidebarFilterPodcasts),
+            ),
         ] {
             if theme::soft_button(ui, &palette, None, label, filter == value).clicked() {
                 filter = value;
@@ -491,16 +505,16 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
     let mut more_page: Option<Page> = None;
     match filter {
         Filter::Playlists => {
-            let liked_name = translator.text(TextKey::CommonLikedSongs);
+            let liked_name = translator.text(TextKey::SidebarLikedSongs);
             if needle.is_empty() || liked_name.to_lowercase().contains(&needle) {
                 entries.push(Entry {
                     image: None,
                     name: liked_name.into(),
                     subtitle: match app.library.liked.total {
                         Some(total) => {
-                            translator.message(&Message::PlaylistSongCount { count: total })
+                            translator.message(&Message::SidebarPlaylistSongCount { count: total })
                         }
-                        None => translator.text(TextKey::CommonPlaylist).into(),
+                        None => translator.text(TextKey::SidebarPlaylistKind).into(),
                     },
                     page: Page::LikedSongs,
                     uri: String::new(),
@@ -542,7 +556,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                         entries.push(Entry {
                             image: pick_image(&playlist.images, 64).map(str::to_string),
                             name: playlist.name.clone(),
-                            subtitle: translator.message(&Message::SearchPlaylistBy {
+                            subtitle: translator.message(&Message::SidebarPlaylistBy {
                                 owner: playlist.owner_name().to_string(),
                             }),
                             page: Page::Playlist(playlist.id.clone()),
@@ -576,13 +590,12 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                 entries.push(Entry {
                     image: pick_image(&album.images, 64).map(str::to_string),
                     name: album.name.clone(),
-                    subtitle: format!(
-                        "{} • {}",
-                        translator.text(album.kind_text_key()),
-                        crate::api::models::join_names(
-                            album.artists.iter().map(|a| a.name.as_str())
-                        )
-                    ),
+                    subtitle: translator.message(&Message::SidebarAlbumBy {
+                        kind: translator.text(album.kind_text_key()).to_string(),
+                        artists: crate::api::models::join_names(
+                            album.artists.iter().map(|a| a.name.as_str()),
+                        ),
+                    }),
                     page: Page::Album(album.id.clone()),
                     uri: album.uri.clone(),
                     round: false,
@@ -608,7 +621,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                 entries.push(Entry {
                     image: pick_image(&artist.images, 64).map(str::to_string),
                     name: artist.name.clone(),
-                    subtitle: translator.text(TextKey::CommonArtist).into(),
+                    subtitle: translator.text(TextKey::SidebarArtistKind).into(),
                     page: Page::Artist(artist.id.clone()),
                     uri: artist.uri.clone(),
                     round: true,
@@ -635,7 +648,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                 entries.push(Entry {
                     image: pick_image(&show.images, 64).map(str::to_string),
                     name: show.name.clone(),
-                    subtitle: translator.message(&Message::SearchPodcastBy {
+                    subtitle: translator.message(&Message::SidebarPodcastBy {
                         publisher: show.publisher.clone(),
                     }),
                     page: Page::Show(show.id.clone()),
@@ -782,11 +795,10 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                         ui.is_enabled(),
                         active,
                         if let Some((_, collapsed, _)) = &entry.folder {
-                            format!(
-                                "{}, folder, {}",
-                                entry.name,
-                                if *collapsed { "collapsed" } else { "expanded" }
-                            )
+                            translator.message(&Message::SidebarFolderState {
+                                name: entry.name.clone(),
+                                collapsed: *collapsed,
+                            })
                         } else {
                             entry.name.clone()
                         },
@@ -959,11 +971,22 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                         // Hovering the art offers to play right from here.
                         let can_play = !entry.uri.is_empty() || entry.liked;
                         let play_response = can_play.then(|| {
-                            ui.interact(
+                            let response = ui.interact(
                                 cover_rect,
                                 ui.id().with(("sidebar-play", index)),
                                 Sense::click(),
-                            )
+                            );
+                            let label = translator.message(&Message::SidebarPlayItem {
+                                name: entry.name.clone(),
+                            });
+                            response.widget_info(|| {
+                                egui::WidgetInfo::labeled(
+                                    egui::WidgetType::Button,
+                                    ui.is_enabled(),
+                                    &label,
+                                )
+                            });
+                            response.on_hover_text(label)
                         });
                         let play_hover = play_response.as_ref().is_some_and(|play| play.hovered());
                         if play_hover || (response.hovered() && can_play) {
@@ -1131,7 +1154,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                                 ui,
                                 &palette,
                                 Some(Icon::Play),
-                                translator.text(TextKey::CommonPlay),
+                                translator.text(TextKey::SidebarPlay),
                             ) && let Some(user) = &app.user
                             {
                                 app.actions.push(Action::PlayContext {
@@ -1369,4 +1392,61 @@ pub fn liked_cover(ui: &egui::Ui, rect: Rect, radius: f32) {
     Icon::HeartFilled
         .image(egui::Color32::WHITE, size)
         .paint_at(ui, icon_rect);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::player::RootlistEntry;
+    use crate::settings::LanguageChoice;
+
+    #[test]
+    fn folder_playlist_count_includes_nested_folders() {
+        let rows = vec![
+            RootlistEntry::FolderStart {
+                id: "outer".into(),
+                name: "Outer".into(),
+            },
+            RootlistEntry::Playlist("spotify:playlist:one".into()),
+            RootlistEntry::FolderStart {
+                id: "inner".into(),
+                name: "Inner".into(),
+            },
+            RootlistEntry::Playlist("spotify:playlist:two".into()),
+            RootlistEntry::FolderEnd,
+            RootlistEntry::FolderEnd,
+        ];
+
+        assert_eq!(folder_playlists(&rows, "outer"), 2);
+        assert_eq!(folder_playlists(&rows, "inner"), 1);
+    }
+
+    #[test]
+    fn sidebar_messages_keep_external_text_and_pluralize_counts() {
+        let english = Translator::new(LanguageChoice::English);
+        let spanish = Translator::new(LanguageChoice::Spanish);
+
+        assert_eq!(
+            english.message(&Message::SidebarFolderPlaylistCount { count: 0 }),
+            "Folder • 0 playlists"
+        );
+        assert_eq!(
+            english.message(&Message::SidebarFolderPlaylistCount { count: 1 }),
+            "Folder • 1 playlist"
+        );
+        assert_eq!(
+            english.message(&Message::SidebarPlaylistSongCount { count: 2 }),
+            "Playlist • 2 songs"
+        );
+        let by_owner = Message::SidebarPlaylistBy {
+            owner: "María".into(),
+        };
+        assert!(english.message(&by_owner).contains("María"));
+        assert!(spanish.message(&by_owner).contains("María"));
+        let folder = Message::SidebarFolderState {
+            name: "Road trip".into(),
+            collapsed: true,
+        };
+        assert!(spanish.message(&folder).contains("Road trip"));
+    }
 }

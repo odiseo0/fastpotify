@@ -339,6 +339,17 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::SidebarUnpin => "Unpin",
         TextKey::SidebarPinTop => "Pin to top",
         TextKey::SidebarSortRecent => "Sort by recently played",
+        TextKey::SidebarHome => "Home",
+        TextKey::SidebarSearch => "Search",
+        TextKey::SidebarDefaultFolder => "Folder",
+        TextKey::SidebarFilterPlaylists => "Playlists",
+        TextKey::SidebarFilterAlbums => "Albums",
+        TextKey::SidebarFilterArtists => "Artists",
+        TextKey::SidebarFilterPodcasts => "Podcasts",
+        TextKey::SidebarLikedSongs => "Liked Songs",
+        TextKey::SidebarPlaylistKind => "Playlist",
+        TextKey::SidebarArtistKind => "Artist",
+        TextKey::SidebarPlay => "Play",
         TextKey::MenuPlayNext => "Play next",
         TextKey::MenuAddPlaylist => "Add to playlist",
         TextKey::MenuNewPlaylist => "New playlist",
@@ -505,13 +516,25 @@ pub(super) fn message(message: &Message) -> String {
             };
             format!("{named} {verb} already in “{playlist_name}”. {question}")
         }
-        Message::FolderPlaylistCount { count } => match count {
+        Message::SidebarFolderPlaylistCount { count } => match count {
             1 => "Folder • 1 playlist".to_string(),
             count => format!("Folder • {count} playlists"),
         },
-        Message::PlaylistSongCount { count } => match count {
+        Message::SidebarPlaylistSongCount { count } => match count {
             1 => "Playlist • 1 song".to_string(),
             count => format!("Playlist • {count} songs"),
+        },
+        Message::SidebarPlaylistBy { owner } => format!("Playlist • {owner}"),
+        Message::SidebarPodcastBy { publisher } => format!("Podcast • {publisher}"),
+        Message::SidebarAlbumBy { kind, artists } => format!("{kind} • {artists}"),
+        Message::SidebarFolderState { name, collapsed } => format!(
+            "{name}, folder, {}",
+            if *collapsed { "collapsed" } else { "expanded" }
+        ),
+        Message::SidebarPlayItem { name } => format!("Play {name}"),
+        Message::MenuSelectionCount { count } => match count {
+            1 => "1 song".to_string(),
+            count => format!("{count} songs"),
         },
         Message::SortBy { label } => format!("Sort by {label}"),
         Message::CollectionNamedContributors { names } => {

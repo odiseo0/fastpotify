@@ -295,6 +295,17 @@ macro_rules! text_keys {
             SidebarUnpin,
             SidebarPinTop,
             SidebarSortRecent,
+            SidebarHome,
+            SidebarSearch,
+            SidebarDefaultFolder,
+            SidebarFilterPlaylists,
+            SidebarFilterAlbums,
+            SidebarFilterArtists,
+            SidebarFilterPodcasts,
+            SidebarLikedSongs,
+            SidebarPlaylistKind,
+            SidebarArtistKind,
+            SidebarPlay,
             MenuPlayNext,
             MenuAddPlaylist,
             MenuNewPlaylist,
@@ -491,11 +502,31 @@ pub enum Message {
         names: Vec<String>,
         selected_count: usize,
     },
-    FolderPlaylistCount {
+    SidebarFolderPlaylistCount {
         count: usize,
     },
-    PlaylistSongCount {
+    SidebarPlaylistSongCount {
         count: u32,
+    },
+    SidebarPlaylistBy {
+        owner: String,
+    },
+    SidebarPodcastBy {
+        publisher: String,
+    },
+    SidebarAlbumBy {
+        kind: String,
+        artists: String,
+    },
+    SidebarFolderState {
+        name: String,
+        collapsed: bool,
+    },
+    SidebarPlayItem {
+        name: String,
+    },
+    MenuSelectionCount {
+        count: usize,
     },
     SortBy {
         label: String,
