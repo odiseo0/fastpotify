@@ -457,6 +457,12 @@ macro_rules! text_keys {
             NoticeSharedSignInFailedPrefix,
             NoticePersonalAuthorizationFailedPrefix,
             NoticeSignInFailedPrefix
+            ,TrayShowHide
+            ,TrayPlay
+            ,TrayPause
+            ,TrayNext
+            ,TrayPrevious
+            ,TrayQuit
         }
     };
 }

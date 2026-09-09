@@ -507,6 +507,12 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::NoticeSharedSignInFailedPrefix => "Shared Spotify sign-in failed",
         TextKey::NoticePersonalAuthorizationFailedPrefix => "Personal app authorization failed",
         TextKey::NoticeSignInFailedPrefix => "Sign-in failed",
+        TextKey::TrayShowHide => "Show or hide Fastpotify",
+        TextKey::TrayPlay => "Play",
+        TextKey::TrayPause => "Pause",
+        TextKey::TrayNext => "Next",
+        TextKey::TrayPrevious => "Previous",
+        TextKey::TrayQuit => "Quit",
     }
 }
 

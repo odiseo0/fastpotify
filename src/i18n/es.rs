@@ -531,6 +531,12 @@ pub(super) fn text(key: TextKey) -> &'static str {
             "TODO(es) Personal app authorization failed"
         }
         TextKey::NoticeSignInFailedPrefix => "TODO(es) Sign-in failed",
+        TextKey::TrayShowHide => "TODO(es) Show or hide Fastpotify",
+        TextKey::TrayPlay => "TODO(es) Play",
+        TextKey::TrayPause => "TODO(es) Pause",
+        TextKey::TrayNext => "TODO(es) Next",
+        TextKey::TrayPrevious => "TODO(es) Previous",
+        TextKey::TrayQuit => "TODO(es) Quit",
     }
 }
 

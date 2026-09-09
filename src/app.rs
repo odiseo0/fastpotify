@@ -484,7 +484,7 @@ impl App {
         let wake = waker.clone();
         let tray = options
             .tray
-            .then(|| TrayService::spawn(move || wake.wake()))
+            .then(|| TrayService::spawn(settings.language, move || wake.wake()))
             .flatten();
 
         let first_page = session
@@ -5822,6 +5822,9 @@ impl App {
                 let language_changed = self.translator.language() != self.settings.language;
                 if language_changed {
                     self.translator = Translator::new(self.settings.language);
+                    if let Some(tray) = &mut self.tray {
+                        tray.set_language(self.settings.language);
+                    }
                 }
                 self.settings_dirty = true;
                 if language_changed {
