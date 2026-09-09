@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use crate::api::models::{PlayableItem, pick_image};
 use crate::app::App;
+use crate::i18n::{Message, TextKey};
 use crate::model::{Action, DiscographyFilter, Loadable, Page, RowContext};
 use crate::theme::{self, Icon};
-use crate::util;
 
 use super::collection::{Hero, hero};
 use super::widgets::{self, TrackRow};
@@ -17,12 +17,15 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
         return;
     };
     let palette = app.palette;
+    let translator = app.translator;
     match &page.artist {
         Loadable::Loaded(artist) => {
             let mut byline = Vec::new();
             if let Some(followers) = &artist.followers {
                 byline.push((
-                    format!("{} followers", util::format_count(followers.total)),
+                    translator.message(&Message::FollowerCount {
+                        count: followers.total,
+                    }),
                     None,
                 ));
             }
@@ -44,7 +47,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
                 Hero {
                     image: pick_image(&artist.images, 300),
                     liked: false,
-                    kind: "Artist",
+                    kind: translator.text(TextKey::CommonArtist),
                     title: &artist.name,
                     description: None,
                     byline,
@@ -55,7 +58,13 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 18.0;
                 if app.play_pending(&artist.uri) {
-                    theme::circle_spinner(ui, 56.0, palette.accent, palette.on_accent, "Starting…");
+                    theme::circle_spinner(
+                        ui,
+                        56.0,
+                        palette.accent,
+                        palette.on_accent,
+                        translator.text(TextKey::CommonStarting),
+                    );
                 } else if theme::circle_button(
                     ui,
                     Icon::PlayFilled,
@@ -63,7 +72,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
                     palette.accent,
                     palette.accent_hover,
                     palette.on_accent,
-                    "Play",
+                    translator.text(TextKey::CommonPlay),
                 )
                 .clicked()
                 {
@@ -76,7 +85,11 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
                 if theme::pill_button(
                     ui,
                     &palette,
-                    if following { "Following" } else { "Follow" },
+                    if following {
+                        translator.text(TextKey::CommonFollowing)
+                    } else {
+                        translator.text(TextKey::CommonFollow)
+                    },
                     false,
                 )
                 .clicked()
@@ -89,7 +102,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
                     26.0,
                     palette.secondary,
                     palette.text,
-                    "More",
+                    translator.text(TextKey::CommonMore),
                 );
                 egui::Popup::menu(&more)
                     .frame(widgets::menu_frame(&palette))
@@ -100,7 +113,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
             ui.add_space(20.0);
 
             // Popular.
-            theme::section_title(ui, &palette, "Popular");
+            theme::section_title(ui, &palette, translator.text(TextKey::ArtistPopular));
             ui.add_space(4.0);
             match &page.top_tracks {
                 Loadable::Loaded(tracks) if !tracks.is_empty() => {
@@ -142,9 +155,9 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
                             &palette,
                             None,
                             if page.show_all_top {
-                                "Show less"
+                                translator.text(TextKey::CommonShowLess)
                             } else {
-                                "See more"
+                                translator.text(TextKey::CommonSeeMore)
                             },
                             false,
                         )
@@ -155,7 +168,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
                     }
                 }
                 Loadable::Loaded(_) => {
-                    theme::subtle(ui, &palette, "No popular songs to show.");
+                    theme::subtle(ui, &palette, translator.text(TextKey::ArtistNoPopularSongs));
                 }
                 Loadable::Loading | Loadable::NotLoaded => widgets::loading_row(ui, &palette),
                 Loadable::Failed(error) => {
@@ -166,11 +179,11 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
             ui.add_space(20.0);
 
             // Discography.
-            theme::section_title(ui, &palette, "Discography");
+            theme::section_title(ui, &palette, translator.text(TextKey::ArtistDiscography));
             ui.add_space(6.0);
             let options: Vec<(DiscographyFilter, &str)> = DiscographyFilter::ALL
                 .iter()
-                .map(|f| (*f, f.label()))
+                .map(|f| (*f, translator.text(f.text_key())))
                 .collect();
             if let Some(filter) = widgets::chips(ui, &palette, &options, page.filter) {
                 app.actions.push(Action::SetDiscographyFilter {
@@ -189,8 +202,10 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
                         .collect();
                     widgets::grid(ui, |ui| {
                         for album in &albums {
-                            let subtitle =
-                                format!("{} • {}", album.year().unwrap_or(""), album.kind_label());
+                            let subtitle = translator.message(&Message::AlbumYearKind {
+                                year: album.year().unwrap_or("").to_string(),
+                                kind: translator.text(album.kind_text_key()).to_string(),
+                            });
                             let card = widgets::card(
                                 ui,
                                 app,
@@ -219,10 +234,22 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
                         let error = error.clone();
                         widgets::error_row(ui, app, &error, None);
                     } else if list.items.is_empty() {
-                        theme::subtle(ui, &palette, "Nothing in this category.");
+                        theme::subtle(
+                            ui,
+                            &palette,
+                            translator.text(TextKey::ArtistNothingCategory),
+                        );
                     } else if list.can_load_more() {
                         ui.add_space(8.0);
-                        if theme::soft_button(ui, &palette, None, "Load more", false).clicked() {
+                        if theme::soft_button(
+                            ui,
+                            &palette,
+                            None,
+                            translator.text(TextKey::CommonLoadMore),
+                            false,
+                        )
+                        .clicked()
+                        {
                             app.actions
                                 .push(Action::LoadMoreArtistAlbums(id.to_string()));
                         }
@@ -236,30 +263,36 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
             if let Loadable::Loaded(related) = &page.related
                 && !related.is_empty()
             {
-                widgets::shelf(ui, &palette, "related", "Fans also like", |ui| {
-                    for artist in related {
-                        let card = widgets::card(
-                            ui,
-                            app,
-                            pick_image(&artist.images, 300),
-                            &artist.name,
-                            "Artist",
-                            true,
-                            true,
-                        );
-                        if card.play {
-                            app.actions.push(Action::PlayContext {
-                                uri: artist.uri.clone(),
-                                offset_uri: None,
-                                offset_index: None,
-                            });
+                widgets::shelf(
+                    ui,
+                    &palette,
+                    "related",
+                    translator.text(TextKey::ArtistFansAlsoLike),
+                    |ui| {
+                        for artist in related {
+                            let card = widgets::card(
+                                ui,
+                                app,
+                                pick_image(&artist.images, 300),
+                                &artist.name,
+                                translator.text(TextKey::CommonArtist),
+                                true,
+                                true,
+                            );
+                            if card.play {
+                                app.actions.push(Action::PlayContext {
+                                    uri: artist.uri.clone(),
+                                    offset_uri: None,
+                                    offset_index: None,
+                                });
+                            }
+                            if card.clicked {
+                                app.actions
+                                    .push(Action::Open(Page::Artist(artist.id.clone())));
+                            }
                         }
-                        if card.clicked {
-                            app.actions
-                                .push(Action::Open(Page::Artist(artist.id.clone())));
-                        }
-                    }
-                });
+                    },
+                );
             }
         }
         Loadable::Loading | Loadable::NotLoaded => {

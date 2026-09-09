@@ -195,6 +195,14 @@ pub fn greeting() -> &'static str {
     }
 }
 
+pub fn greeting_text_key() -> crate::i18n::TextKey {
+    match local_hour() {
+        5..=11 => crate::i18n::TextKey::GreetingMorning,
+        12..=17 => crate::i18n::TextKey::GreetingAfternoon,
+        _ => crate::i18n::TextKey::GreetingEvening,
+    }
+}
+
 fn local_hour() -> u8 {
     jiff::Zoned::now().hour() as u8
 }

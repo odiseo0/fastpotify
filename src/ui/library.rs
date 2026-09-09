@@ -2,6 +2,7 @@
 
 use crate::api::models::{join_names, pick_image};
 use crate::app::App;
+use crate::i18n::TextKey;
 use crate::model::{Action, Page};
 use crate::theme::{self, Icon};
 
@@ -10,25 +11,30 @@ use super::widgets;
 pub fn show(app: &mut App, ui: &mut egui::Ui, page: Page) {
     let palette = app.palette;
     ui.add_space(8.0);
+    let translator = app.translator;
     let (title, empty_title, empty_body) = match page {
-        Page::Albums => ("Albums", "No saved albums", "Saved albums appear here."),
+        Page::Albums => (
+            TextKey::CommonAlbums,
+            TextKey::LibraryNoSavedAlbums,
+            TextKey::LibrarySavedAlbumsDetail,
+        ),
         Page::Artists => (
-            "Artists",
-            "No followed artists",
-            "Followed artists appear here.",
+            TextKey::CommonArtists,
+            TextKey::LibraryNoFollowedArtists,
+            TextKey::LibraryFollowedArtistsDetail,
         ),
         Page::Podcasts => (
-            "Podcasts",
-            "No podcasts yet",
-            "Followed podcasts appear here.",
+            TextKey::CommonPodcasts,
+            TextKey::LibraryNoPodcasts,
+            TextKey::LibraryFollowedPodcastsDetail,
         ),
         _ => (
-            "Episodes",
-            "No saved episodes",
-            "Saved episodes appear here.",
+            TextKey::CommonEpisodes,
+            TextKey::LibraryNoSavedEpisodes,
+            TextKey::LibrarySavedEpisodesDetail,
         ),
     };
-    theme::text(ui, title, theme::bold(28.0), palette.text);
+    theme::text(ui, translator.text(title), theme::bold(28.0), palette.text);
     ui.add_space(14.0);
     match page {
         Page::Albums => {
@@ -91,7 +97,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, page: Page) {
                     app,
                     pick_image(&artist.images, 300),
                     &artist.name,
-                    "Artist",
+                    translator.text(TextKey::CommonArtist),
                     true,
                     true,
                 );
@@ -213,8 +219,8 @@ fn footer(
     error: Option<String>,
     can_load: bool,
     empty: bool,
-    empty_title: &str,
-    empty_body: &str,
+    empty_title: TextKey,
+    empty_body: TextKey,
     icon: Icon,
 ) {
     let palette = app.palette;
@@ -226,7 +232,13 @@ fn footer(
         widgets::error_row(ui, app, &error, Some(page.clone()));
     }
     if empty && !loading {
-        widgets::empty_state(ui, &palette, icon, empty_title, empty_body);
+        widgets::empty_state(
+            ui,
+            &palette,
+            icon,
+            app.translator.text(empty_title),
+            app.translator.text(empty_body),
+        );
     }
     widgets::load_more_when_near_end(ui, app, page, can_load && !loading);
 }

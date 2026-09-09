@@ -477,6 +477,18 @@ impl SearchFilter {
             Self::Episodes => "Episodes",
         }
     }
+
+    pub fn text_key(self) -> crate::i18n::TextKey {
+        match self {
+            Self::All => crate::i18n::TextKey::CommonAll,
+            Self::Songs => crate::i18n::TextKey::CommonSongs,
+            Self::Artists => crate::i18n::TextKey::CommonArtists,
+            Self::Albums => crate::i18n::TextKey::CommonAlbums,
+            Self::Playlists => crate::i18n::TextKey::CommonPlaylists,
+            Self::Podcasts => crate::i18n::TextKey::CommonPodcasts,
+            Self::Episodes => crate::i18n::TextKey::CommonEpisodes,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -559,6 +571,15 @@ impl DiscographyFilter {
             Self::Albums => "Albums",
             Self::Singles => "Singles & EPs",
             Self::AppearsOn => "Appears On",
+        }
+    }
+
+    pub fn text_key(self) -> crate::i18n::TextKey {
+        match self {
+            Self::All => crate::i18n::TextKey::DiscographyFilterAll,
+            Self::Albums => crate::i18n::TextKey::DiscographyFilterAlbums,
+            Self::Singles => crate::i18n::TextKey::DiscographyFilterSingles,
+            Self::AppearsOn => crate::i18n::TextKey::DiscographyFilterAppearsOn,
         }
     }
 

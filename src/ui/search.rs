@@ -6,6 +6,7 @@ use egui::{Align, CornerRadius, Layout, Rect, Sense, Vec2, pos2, vec2};
 
 use crate::api::models::{Artist, PlayableItem, SearchResults, pick_image};
 use crate::app::App;
+use crate::i18n::{Message, TextKey};
 use crate::model::{Action, Loadable, Page, RowContext, SearchFilter};
 use crate::theme::{self, Icon};
 
@@ -13,13 +14,16 @@ use super::widgets::{self, TrackRow};
 
 pub fn show(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     if app.search.committed.is_empty() && app.search.typed_at.is_none() {
         recent(app, ui);
         return;
     }
     ui.add_space(4.0);
-    let options: Vec<(SearchFilter, &str)> =
-        SearchFilter::ALL.iter().map(|f| (*f, f.label())).collect();
+    let options: Vec<(SearchFilter, &str)> = SearchFilter::ALL
+        .iter()
+        .map(|f| (*f, translator.text(f.text_key())))
+        .collect();
     if let Some(filter) = widgets::chips(ui, &palette, &options, app.search.filter) {
         app.actions.push(Action::SetSearchFilter(filter));
     }
@@ -37,12 +41,15 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         }
     };
     if results.is_empty() {
+        let title = translator.message(&Message::SearchNoResults {
+            query: app.search.committed.clone(),
+        });
         widgets::empty_state(
             ui,
             &palette,
             Icon::Search,
-            &format!("No results for “{}”", app.search.committed),
-            "Check the spelling, or try fewer words.",
+            &title,
+            translator.text(TextKey::SearchNoResultsDetail),
         );
         return;
     }
@@ -59,18 +66,19 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
 
 fn recent(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     ui.add_space(6.0);
     if app.settings.search_history.is_empty() {
         widgets::empty_state(
             ui,
             &palette,
             Icon::Search,
-            "Search Spotify",
-            "Find songs, artists, albums, playlists, and podcasts.",
+            translator.text(TextKey::SearchSpotify),
+            translator.text(TextKey::SearchSpotifyDetail),
         );
         return;
     }
-    theme::section_title(ui, &palette, "Recent searches");
+    theme::section_title(ui, &palette, translator.text(TextKey::SearchRecent));
     ui.add_space(6.0);
     let history = app.settings.search_history.clone();
     ui.horizontal_wrapped(|ui| {
@@ -85,6 +93,7 @@ fn recent(app: &mut App, ui: &mut egui::Ui) {
 
 fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
     let palette = app.palette;
+    let translator = app.translator;
     let query = app.search.committed.to_lowercase();
     let top_artist = results
         .artists
@@ -104,7 +113,7 @@ fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
         };
         ui.vertical(|ui| {
             ui.set_width(top_width);
-            theme::section_title(ui, &palette, "Top result");
+            theme::section_title(ui, &palette, translator.text(TextKey::SearchTopResult));
             ui.add_space(4.0);
             if let Some(artist) = top_artist {
                 top_result(
@@ -112,7 +121,7 @@ fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
                     ui,
                     pick_image(&artist.images, 300),
                     &artist.name,
-                    "Artist",
+                    translator.text(TextKey::CommonArtist),
                     true,
                     Some(artist.uri.clone()),
                     Page::Artist(artist.id.clone()),
@@ -129,7 +138,9 @@ fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
                     ui,
                     track.image(300),
                     &track.name,
-                    &format!("Song • {}", track.artist_names()),
+                    &translator.message(&Message::SearchSongBy {
+                        artist: track.artist_names(),
+                    }),
                     false,
                     Some(track.uri.clone()),
                     page,
@@ -141,12 +152,11 @@ fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
                     ui,
                     pick_image(&album.images, 300),
                     &album.name,
-                    &format!(
-                        "Album • {}",
-                        crate::api::models::join_names(
-                            album.artists.iter().map(|a| a.name.as_str())
-                        )
-                    ),
+                    &translator.message(&Message::SearchAlbumBy {
+                        artist: crate::api::models::join_names(
+                            album.artists.iter().map(|a| a.name.as_str()),
+                        ),
+                    }),
                     false,
                     Some(album.uri.clone()),
                     Page::Album(album.id.clone()),
@@ -161,7 +171,9 @@ fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
                     ui,
                     pick_image(&playlist.images, 300),
                     &playlist.name,
-                    &format!("Playlist • {}", playlist.owner_name()),
+                    &translator.message(&Message::SearchPlaylistBy {
+                        owner: playlist.owner_name().to_string(),
+                    }),
                     false,
                     Some(playlist.uri.clone()),
                     Page::Playlist(playlist.id.clone()),
@@ -172,7 +184,9 @@ fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
                     ui,
                     pick_image(&show.images, 300),
                     &show.name,
-                    &format!("Podcast • {}", show.publisher),
+                    &translator.message(&Message::SearchPodcastBy {
+                        publisher: show.publisher.clone(),
+                    }),
                     false,
                     Some(show.uri.clone()),
                     Page::Show(show.id.clone()),
@@ -200,7 +214,7 @@ fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
         .as_ref()
         .is_some_and(|page| !page.items.is_empty())
     {
-        theme::section_title(ui, &palette, "Episodes");
+        theme::section_title(ui, &palette, translator.text(TextKey::CommonEpisodes));
         ui.add_space(4.0);
         episodes(app, ui, results, 4);
     }
@@ -218,6 +232,7 @@ fn top_result(
     page: Page,
 ) {
     let palette = app.palette;
+    let translator = app.translator;
     let (rect, response) =
         ui.allocate_exact_size(vec2(ui.available_width(), 232.0), Sense::click());
     if ui.is_rect_visible(rect) {
@@ -280,7 +295,7 @@ fn top_result(
                 palette.accent,
                 palette.accent_hover,
                 palette.on_accent,
-                "Play",
+                translator.text(TextKey::CommonPlay),
             )
             .clicked()
             {
@@ -316,7 +331,7 @@ fn songs(app: &mut App, ui: &mut egui::Ui, results: &SearchResults, limit: usize
     if page.items.is_empty() {
         return;
     }
-    theme::section_title(ui, &palette, "Songs");
+    theme::section_title(ui, &palette, app.translator.text(TextKey::CommonSongs));
     ui.add_space(4.0);
     let uris: Arc<[String]> = page
         .items
@@ -361,7 +376,7 @@ fn artist_card(app: &mut App, ui: &mut egui::Ui, artist: &Artist) {
         app,
         pick_image(&artist.images, 300),
         &artist.name,
-        "Artist",
+        app.translator.text(TextKey::CommonArtist),
         true,
         true,
     );
@@ -384,11 +399,17 @@ fn shelf_artists(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
     if page.items.is_empty() {
         return;
     }
-    widgets::shelf(ui, &palette, "search-artists", "Artists", |ui| {
-        for artist in &page.items {
-            artist_card(app, ui, artist);
-        }
-    });
+    widgets::shelf(
+        ui,
+        &palette,
+        "search-artists",
+        app.translator.text(TextKey::CommonArtists),
+        |ui| {
+            for artist in &page.items {
+                artist_card(app, ui, artist);
+            }
+        },
+    );
 }
 
 fn artists_grid(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
@@ -434,11 +455,17 @@ fn shelf_albums(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
     if page.items.is_empty() {
         return;
     }
-    widgets::shelf(ui, &palette, "search-albums", "Albums", |ui| {
-        for album in &page.items {
-            album_card(app, ui, album);
-        }
-    });
+    widgets::shelf(
+        ui,
+        &palette,
+        "search-albums",
+        app.translator.text(TextKey::CommonAlbums),
+        |ui| {
+            for album in &page.items {
+                album_card(app, ui, album);
+            }
+        },
+    );
 }
 
 fn albums_grid(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
@@ -456,7 +483,9 @@ fn playlist_card(app: &mut App, ui: &mut egui::Ui, playlist: &crate::api::models
         app,
         pick_image(&playlist.images, 300),
         &playlist.name,
-        &format!("By {}", playlist.owner_name()),
+        &app.translator.message(&Message::ByName {
+            name: playlist.owner_name().to_string(),
+        }),
         false,
         true,
     );
@@ -481,11 +510,17 @@ fn shelf_playlists(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
     if page.items.is_empty() {
         return;
     }
-    widgets::shelf(ui, &palette, "search-playlists", "Playlists", |ui| {
-        for playlist in &page.items {
-            playlist_card(app, ui, playlist);
-        }
-    });
+    widgets::shelf(
+        ui,
+        &palette,
+        "search-playlists",
+        app.translator.text(TextKey::CommonPlaylists),
+        |ui| {
+            for playlist in &page.items {
+                playlist_card(app, ui, playlist);
+            }
+        },
+    );
 }
 
 fn playlists_grid(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
@@ -520,11 +555,17 @@ fn shelf_shows(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
     if page.items.is_empty() {
         return;
     }
-    widgets::shelf(ui, &palette, "search-shows", "Podcasts", |ui| {
-        for show in &page.items {
-            show_card(app, ui, show);
-        }
-    });
+    widgets::shelf(
+        ui,
+        &palette,
+        "search-shows",
+        app.translator.text(TextKey::CommonPodcasts),
+        |ui| {
+            for show in &page.items {
+                show_card(app, ui, show);
+            }
+        },
+    );
 }
 
 fn shows_grid(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {

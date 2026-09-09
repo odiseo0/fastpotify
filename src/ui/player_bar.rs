@@ -3,6 +3,7 @@
 use egui::{Align, Frame, Layout, Margin, Rect, Sense, UiBuilder, Vec2, pos2, vec2};
 
 use crate::app::{App, NowPlaying};
+use crate::i18n::TextKey;
 use crate::model::{Action, DragTrack, Page};
 use crate::player::RepeatMode;
 use crate::theme::{self, Icon};
@@ -63,6 +64,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
 
 fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option<&NowPlaying>) {
     let palette = app.palette;
+    let translator = app.translator;
     let cy = region.center().y;
     let cover_rect = Rect::from_min_size(pos2(region.left() + 4.0, cy - 28.0), Vec2::splat(56.0));
 
@@ -81,13 +83,13 @@ fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option
         text_ui.spacing_mut().item_spacing.y = 2.0;
         theme::text(
             &mut text_ui,
-            "Nothing playing",
+            translator.text(TextKey::PlayerNothingPlaying),
             theme::medium(14.0),
             palette.secondary,
         );
         theme::text(
             &mut text_ui,
-            "Pick a song, album, or playlist",
+            translator.text(TextKey::PlayerPickSomething),
             theme::regular(12.0),
             palette.dim,
         );
@@ -217,9 +219,17 @@ fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option
     if !now.is_episode {
         let saved = app.is_saved(&now.uri).unwrap_or(false);
         let (icon, color, tooltip) = if saved {
-            (Icon::HeartFilled, palette.accent, "Remove from Liked Songs")
+            (
+                Icon::HeartFilled,
+                palette.accent,
+                translator.text(TextKey::PlayerRemoveLiked),
+            )
         } else {
-            (Icon::Heart, palette.secondary, "Save to Liked Songs")
+            (
+                Icon::Heart,
+                palette.secondary,
+                translator.text(TextKey::PlayerSaveLiked),
+            )
         };
         // Sit the heart just past the actual text, not at the region's far
         // edge, so it stays visually attached to the title.
@@ -249,6 +259,7 @@ fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option
 
 fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region: Rect) {
     let palette = app.palette;
+    let translator = app.translator;
     // Everything here is placed with explicit rects: egui's implicit rows
     // centre each widget in the row height known when it is added, which
     // left earlier icons riding high next to the play disc.
@@ -300,14 +311,14 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
         } else {
             palette.text
         },
-        "Shuffle",
+        translator.text(TextKey::PlayerShuffle),
     );
     shuffle_button.widget_info(|| {
         egui::WidgetInfo::selected(
             egui::WidgetType::Checkbox,
             cell.is_enabled(),
             shuffle,
-            "Shuffle",
+            translator.text(TextKey::PlayerShuffleOn),
         )
     });
     if shuffle_button.clicked() {
@@ -321,7 +332,7 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
         18.0,
         dim,
         palette.text,
-        "Previous",
+        translator.text(TextKey::PlayerPrevious),
     )
     .clicked()
     {
@@ -353,7 +364,11 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
             palette.text,
             hover,
             palette.window,
-            if playing { "Pause" } else { "Play" },
+            if playing {
+                translator.text(TextKey::CommonPause)
+            } else {
+                translator.text(TextKey::CommonPlay)
+            },
         )
         .clicked()
         {
@@ -368,7 +383,7 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
         18.0,
         dim,
         palette.text,
-        "Next",
+        translator.text(TextKey::PlayerNext),
     )
     .clicked()
     {
@@ -376,9 +391,17 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
     }
 
     let (repeat_icon, repeat_color, tooltip) = match repeat {
-        RepeatMode::Off => (Icon::Repeat, dim, "Repeat"),
-        RepeatMode::Context => (Icon::Repeat, palette.accent, "Repeat one"),
-        RepeatMode::Track => (Icon::Repeat1, palette.accent, "Repeat off"),
+        RepeatMode::Off => (Icon::Repeat, dim, translator.text(TextKey::PlayerRepeat)),
+        RepeatMode::Context => (
+            Icon::Repeat,
+            palette.accent,
+            translator.text(TextKey::PlayerRepeatOne),
+        ),
+        RepeatMode::Track => (
+            Icon::Repeat1,
+            palette.accent,
+            translator.text(TextKey::PlayerRepeatOff),
+        ),
     };
     let mut cell = centered(ui, slot(widths[4]));
     if theme::icon_button(
@@ -438,7 +461,7 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
         &mut slider_ui,
         &palette,
         egui::Id::new("seek-slider"),
-        "Playback position (%)",
+        app.translator.text(TextKey::PlayerPositionAccessibility),
         fraction,
         slider_width,
         None,
@@ -464,6 +487,7 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
 
 fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
     let palette = app.palette;
+    let translator = app.translator;
     ui.spacing_mut().item_spacing.x = 6.0;
     let volume = now
         .map(|now| now.volume_percent)
@@ -476,7 +500,7 @@ fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
         ui,
         &palette,
         egui::Id::new("volume-slider"),
-        "Volume (%)",
+        translator.text(TextKey::PlayerVolumeAccessibility),
         shown as f32 / 100.0,
         92.0,
         Some(0.05),
@@ -508,7 +532,11 @@ fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
         18.0,
         palette.secondary,
         palette.text,
-        if shown == 0 { "Unmute" } else { "Mute" },
+        if shown == 0 {
+            translator.text(TextKey::PlayerUnmute)
+        } else {
+            translator.text(TextKey::PlayerMute)
+        },
     )
     .clicked()
     {
@@ -526,7 +554,7 @@ fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
             palette.secondary
         },
         palette.text,
-        "Connect to a device",
+        translator.text(TextKey::PlayerConnectDevice),
     );
     ui.ctx().data_mut(|data| {
         data.insert_temp(egui::Id::new(super::devices::BUTTON_RECT_ID), devices.rect)
@@ -545,7 +573,7 @@ fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
             palette.secondary
         },
         palette.text,
-        "Queue",
+        translator.text(TextKey::CommonQueue),
     )
     .clicked()
     {
@@ -561,7 +589,7 @@ fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
             palette.secondary
         },
         palette.text,
-        "Lyrics",
+        translator.text(TextKey::CommonLyrics),
     )
     .clicked()
     {

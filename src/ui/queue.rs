@@ -6,6 +6,7 @@ use egui::{Align, Frame, Layout, Margin};
 
 use crate::api::models::PlayableItem;
 use crate::app::App;
+use crate::i18n::{TextKey, Translator};
 use crate::model::{Action, Loadable, QueueTab, RowContext};
 use crate::theme::{self, Icon};
 
@@ -13,13 +14,19 @@ use super::widgets::{self, TrackRow};
 
 pub fn page(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     ui.add_space(8.0);
     // The queue refreshes on track changes, additions, and while visible.
     let offer_save = !app.queue_playlist_uris().is_empty();
     ui.horizontal(|ui| {
-        theme::text(ui, "Queue", theme::bold(28.0), palette.text);
+        theme::text(
+            ui,
+            translator.text(TextKey::CommonQueue),
+            theme::bold(28.0),
+            palette.text,
+        );
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if save_button(ui, &palette, offer_save) {
+            if save_button(ui, &palette, translator, offer_save) {
                 app.actions.push(Action::SaveQueueAsPlaylist);
             }
         });
@@ -30,6 +37,7 @@ pub fn page(app: &mut App, ui: &mut egui::Ui) {
 
 pub fn side_panel(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let panel = egui::Panel::right("queue-panel")
         .resizable(true)
         .default_size(app.settings.queue_width)
@@ -62,15 +70,24 @@ pub fn side_panel(app: &mut App, ui: &mut egui::Ui) {
                 picked = widgets::chips(
                     ui,
                     &palette,
-                    &[(QueueTab::Queue, "Queue"), (QueueTab::Recents, "Recent")],
+                    &[
+                        (QueueTab::Queue, translator.text(TextKey::CommonQueue)),
+                        (QueueTab::Recents, translator.text(TextKey::QueueRecentTab)),
+                    ],
                     tab,
                 );
             },
             |ui| {
-                close =
-                    theme::icon_button(ui, Icon::X, 18.0, palette.secondary, palette.text, "Close")
-                        .clicked();
-                save = save_button(ui, &palette, offer_save);
+                close = theme::icon_button(
+                    ui,
+                    Icon::X,
+                    18.0,
+                    palette.secondary,
+                    palette.text,
+                    translator.text(TextKey::CommonClose),
+                )
+                .clicked();
+                save = save_button(ui, &palette, translator, offer_save);
             },
         );
         if let Some(tab) = picked {
@@ -108,7 +125,12 @@ pub fn side_panel(app: &mut App, ui: &mut egui::Ui) {
 }
 
 /// Saves the current and upcoming queue as a playlist.
-fn save_button(ui: &mut egui::Ui, palette: &crate::theme::Palette, offer: bool) -> bool {
+fn save_button(
+    ui: &mut egui::Ui,
+    palette: &crate::theme::Palette,
+    translator: Translator,
+    offer: bool,
+) -> bool {
     offer
         && theme::icon_button(
             ui,
@@ -116,7 +138,7 @@ fn save_button(ui: &mut egui::Ui, palette: &crate::theme::Palette, offer: bool) 
             18.0,
             palette.secondary,
             palette.text,
-            "Save as a playlist",
+            translator.text(TextKey::QueueSavePlaylist),
         )
         .clicked()
 }
@@ -127,13 +149,14 @@ fn clear_button(app: &mut App, ui: &mut egui::Ui) {
         return;
     }
     let palette = app.palette;
+    let translator = app.translator;
     if theme::icon_button(
         ui,
         Icon::Trash,
         18.0,
         palette.secondary,
         palette.text,
-        "Clear queue",
+        translator.text(TextKey::QueueClear),
     )
     .clicked()
     {
@@ -143,6 +166,7 @@ fn clear_button(app: &mut App, ui: &mut egui::Ui) {
 
 fn contents(app: &mut App, ui: &mut egui::Ui, compact: bool) {
     let palette = app.palette;
+    let translator = app.translator;
     match &app.queue {
         Loadable::Loaded(_) => {}
         Loadable::Loading | Loadable::NotLoaded => {
@@ -171,7 +195,12 @@ fn contents(app: &mut App, ui: &mut egui::Ui, compact: bool) {
             .and_then(|queue| queue.currently_playing.clone()),
     };
     if let Some(current) = current.as_ref() {
-        theme::text(ui, "Now playing", theme::semibold(14.0), palette.text);
+        theme::text(
+            ui,
+            translator.text(TextKey::QueueNowPlaying),
+            theme::semibold(14.0),
+            palette.text,
+        );
         ui.add_space(4.0);
         let context = RowContext::Uris(Arc::from([current.uri().to_string()]));
         widgets::track_row(
@@ -201,8 +230,8 @@ fn contents(app: &mut App, ui: &mut egui::Ui, compact: bool) {
             ui,
             &palette,
             Icon::ListVideo,
-            "Nothing queued",
-            "Queued songs appear here.",
+            translator.text(TextKey::QueueNothingQueued),
+            translator.text(TextKey::QueueNothingQueuedDetail),
         );
         return;
     }
@@ -220,7 +249,12 @@ fn contents(app: &mut App, ui: &mut egui::Ui, compact: bool) {
         // The trash sits with the songs it removes: only this section is
         // the user's to clear, the context below plays itself.
         ui.horizontal(|ui| {
-            theme::text(ui, "Playing next", theme::semibold(14.0), palette.text);
+            theme::text(
+                ui,
+                translator.text(TextKey::QueuePlayingNext),
+                theme::semibold(14.0),
+                palette.text,
+            );
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 clear_button(app, ui);
             });
@@ -235,7 +269,12 @@ fn contents(app: &mut App, ui: &mut egui::Ui, compact: bool) {
         ui.add_space(14.0);
     }
     if queue_len > queued_len {
-        theme::text(ui, "Next up", theme::semibold(14.0), palette.text);
+        theme::text(
+            ui,
+            translator.text(TextKey::QueueNextUp),
+            theme::semibold(14.0),
+            palette.text,
+        );
         ui.add_space(4.0);
         widgets::virtual_rows(ui, queue_len - queued_len, row_height, |ui, index| {
             queue_row(app, ui, queued_len + index, compact);
@@ -249,6 +288,7 @@ fn queue_is_empty(app: &App) -> bool {
 
 fn recents_contents(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     // Snapshot to avoid borrow issues while drawing. The rows are both
     // histories as one: what was played here, which Spotify is never told
     // about, and what Spotify knows of every other device.
@@ -268,7 +308,15 @@ fn recents_contents(app: &mut App, ui: &mut egui::Ui) {
                 ui.add_space(8.0);
                 theme::icon(ui, Icon::CircleAlert, 16.0, palette.danger);
                 theme::text(ui, &err, theme::regular(13.0), palette.secondary);
-                if theme::soft_button(ui, &palette, Some(Icon::Refresh), "Retry", false).clicked() {
+                if theme::soft_button(
+                    ui,
+                    &palette,
+                    Some(Icon::Refresh),
+                    translator.text(TextKey::CommonRetry),
+                    false,
+                )
+                .clicked()
+                {
                     app.actions.push(Action::ReloadRecents);
                 }
             });
@@ -279,8 +327,8 @@ fn recents_contents(app: &mut App, ui: &mut egui::Ui) {
                 ui,
                 &palette,
                 Icon::Clock,
-                "No recent plays",
-                "Played songs appear here.",
+                translator.text(TextKey::QueueNoRecentPlays),
+                translator.text(TextKey::QueueNoRecentPlaysDetail),
             );
         } else {
             widgets::loading_row(ui, &palette);
@@ -293,7 +341,15 @@ fn recents_contents(app: &mut App, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             theme::icon(ui, Icon::CircleAlert, 14.0, palette.danger);
             theme::text(ui, &err, theme::regular(12.0), palette.secondary);
-            if theme::soft_button(ui, &palette, Some(Icon::Refresh), "Retry", false).clicked() {
+            if theme::soft_button(
+                ui,
+                &palette,
+                Some(Icon::Refresh),
+                translator.text(TextKey::CommonRetry),
+                false,
+            )
+            .clicked()
+            {
                 app.actions.push(Action::LoadMoreRecents);
             }
         });
@@ -343,7 +399,15 @@ fn recents_contents(app: &mut App, ui: &mut egui::Ui) {
         if can_load && cursor - clip.bottom() < 900.0 {
             app.actions.push(Action::LoadMoreRecents);
         }
-        if theme::soft_button(ui, &palette, Some(Icon::Refresh), "Load more", false).clicked() {
+        if theme::soft_button(
+            ui,
+            &palette,
+            Some(Icon::Refresh),
+            translator.text(TextKey::CommonLoadMore),
+            false,
+        )
+        .clicked()
+        {
             app.actions.push(Action::LoadMoreRecents);
         }
     }

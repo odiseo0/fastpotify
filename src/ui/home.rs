@@ -6,6 +6,7 @@ use egui::{CornerRadius, Rect, Sense, Vec2, pos2, vec2};
 
 use crate::api::models::{PlayableItem, Playlist, pick_image};
 use crate::app::App;
+use crate::i18n::{Message, TextKey};
 use crate::model::{Action, DISCOVER_TERMS, Loadable, Page, RowContext};
 use crate::theme::{self, Icon};
 
@@ -13,8 +14,14 @@ use super::widgets::{self, TrackRow};
 
 pub fn show(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     ui.add_space(6.0);
-    theme::text(ui, crate::util::greeting(), theme::bold(30.0), palette.text);
+    theme::text(
+        ui,
+        translator.text(crate::util::greeting_text_key()),
+        theme::bold(30.0),
+        palette.text,
+    );
     ui.add_space(12.0);
     quick_access(app, ui);
     ui.add_space(16.0);
@@ -36,9 +43,10 @@ struct Tile {
 
 fn quick_access(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let mut tiles: Vec<Tile> = vec![Tile {
         image: None,
-        name: "Liked Songs".to_string(),
+        name: translator.text(TextKey::CommonLikedSongs).to_string(),
         page: Page::LikedSongs,
         uri: app
             .user
@@ -130,7 +138,7 @@ fn quick_access(app: &mut App, ui: &mut egui::Ui) {
                             palette.accent,
                             palette.accent_hover,
                             palette.on_accent,
-                            "Play",
+                            translator.text(TextKey::CommonPlay),
                         )
                         .clicked()
                         {
@@ -155,6 +163,7 @@ fn quick_access(app: &mut App, ui: &mut egui::Ui) {
 
 fn made_for_you(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let mut playlists: Vec<Playlist> = Vec::new();
     let mut loading = false;
     let mut failed = false;
@@ -179,57 +188,83 @@ fn made_for_you(app: &mut App, ui: &mut egui::Ui) {
     if playlists.is_empty() && !loading && !failed {
         return;
     }
-    widgets::shelf(ui, &palette, "made-for-you", "Made for you", |ui| {
-        if playlists.is_empty() && loading {
-            widgets::loading_row(ui, &palette);
-        } else if playlists.is_empty() && failed {
-            widgets::error_row(ui, app, "Couldn't load this shelf", Some(Page::Home));
-        }
-        for playlist in &playlists {
-            let subtitle = playlist
-                .description
-                .as_deref()
-                .map(crate::util::strip_html)
-                .filter(|d| !d.is_empty())
-                .unwrap_or_else(|| format!("By {}", playlist.owner_name()));
-            let card = widgets::card(
-                ui,
-                app,
-                pick_image(&playlist.images, 300),
-                &playlist.name,
-                &subtitle,
-                false,
-                true,
-            );
-            if card.play {
-                app.actions.push(Action::PlayContext {
-                    uri: playlist.uri.clone(),
-                    offset_uri: None,
-                    offset_index: None,
-                });
+    widgets::shelf(
+        ui,
+        &palette,
+        "made-for-you",
+        translator.text(TextKey::HomeMadeForYou),
+        |ui| {
+            if playlists.is_empty() && loading {
+                widgets::loading_row(ui, &palette);
+            } else if playlists.is_empty() && failed {
+                widgets::error_row(
+                    ui,
+                    app,
+                    translator.text(TextKey::HomeShelfLoadError),
+                    Some(Page::Home),
+                );
             }
-            if card.clicked {
-                app.actions
-                    .push(Action::Open(Page::Playlist(playlist.id.clone())));
+            for playlist in &playlists {
+                let subtitle = playlist
+                    .description
+                    .as_deref()
+                    .map(crate::util::strip_html)
+                    .filter(|d| !d.is_empty())
+                    .unwrap_or_else(|| {
+                        translator.message(&Message::ByName {
+                            name: playlist.owner_name().to_string(),
+                        })
+                    });
+                let card = widgets::card(
+                    ui,
+                    app,
+                    pick_image(&playlist.images, 300),
+                    &playlist.name,
+                    &subtitle,
+                    false,
+                    true,
+                );
+                if card.play {
+                    app.actions.push(Action::PlayContext {
+                        uri: playlist.uri.clone(),
+                        offset_uri: None,
+                        offset_index: None,
+                    });
+                }
+                if card.clicked {
+                    app.actions
+                        .push(Action::Open(Page::Playlist(playlist.id.clone())));
+                }
             }
-        }
-    });
+        },
+    );
 }
 
 fn recently_played(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let history = match app.home.recently_played.clone() {
         Loadable::Loaded(history) => history,
         Loadable::Loading | Loadable::NotLoaded => {
-            widgets::shelf(ui, &palette, "recent", "Recently played", |ui| {
-                widgets::loading_row(ui, &palette)
-            });
+            widgets::shelf(
+                ui,
+                &palette,
+                "recent",
+                translator.text(TextKey::HomeRecentlyPlayed),
+                |ui| widgets::loading_row(ui, &palette),
+            );
             return;
         }
         Loadable::Failed(message) => {
-            widgets::shelf(ui, &palette, "recent", "Recently played", |ui| {
-                widgets::error_row(ui, app, &message, Some(Page::Home));
-            });
+            widgets::shelf(
+                ui,
+                &palette,
+                "recent",
+                translator.text(TextKey::HomeRecentlyPlayed),
+                |ui| {
+                    widgets::error_row(ui, app, &message, Some(Page::Home));
+                },
+            );
             return;
         }
     };
@@ -248,79 +283,102 @@ fn recently_played(app: &mut App, ui: &mut egui::Ui) {
     if tracks.is_empty() {
         return;
     }
-    widgets::shelf(ui, &palette, "recent", "Recently played", |ui| {
-        for entry in &tracks {
-            let track = &entry.track;
-            let card = widgets::card(
-                ui,
-                app,
-                track.image(300),
-                &track.name,
-                &track.artist_names(),
-                false,
-                true,
-            );
-            if card.play {
-                app.actions.push(Action::PlayUris {
-                    uris: vec![track.uri.clone()],
-                    index: 0,
-                });
+    widgets::shelf(
+        ui,
+        &palette,
+        "recent",
+        translator.text(TextKey::HomeRecentlyPlayed),
+        |ui| {
+            for entry in &tracks {
+                let track = &entry.track;
+                let card = widgets::card(
+                    ui,
+                    app,
+                    track.image(300),
+                    &track.name,
+                    &track.artist_names(),
+                    false,
+                    true,
+                );
+                if card.play {
+                    app.actions.push(Action::PlayUris {
+                        uris: vec![track.uri.clone()],
+                        index: 0,
+                    });
+                }
+                if card.clicked
+                    && let Some(album) = &track.album
+                    && !album.id.is_empty()
+                {
+                    app.actions
+                        .push(Action::Open(Page::Album(album.id.clone())));
+                }
             }
-            if card.clicked
-                && let Some(album) = &track.album
-                && !album.id.is_empty()
-            {
-                app.actions
-                    .push(Action::Open(Page::Album(album.id.clone())));
-            }
-        }
-    });
+        },
+    );
 }
 
 fn top_artists(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let artists = match app.home.top_artists.clone() {
         Loadable::Loaded(artists) => artists,
         Loadable::Loading | Loadable::NotLoaded => {
-            widgets::shelf(ui, &palette, "top-artists", "Your top artists", |ui| {
-                widgets::loading_row(ui, &palette)
-            });
+            widgets::shelf(
+                ui,
+                &palette,
+                "top-artists",
+                translator.text(TextKey::HomeTopArtists),
+                |ui| widgets::loading_row(ui, &palette),
+            );
             return;
         }
         Loadable::Failed(message) => {
-            widgets::shelf(ui, &palette, "top-artists", "Your top artists", |ui| {
-                widgets::error_row(ui, app, &message, Some(Page::Home));
-            });
+            widgets::shelf(
+                ui,
+                &palette,
+                "top-artists",
+                translator.text(TextKey::HomeTopArtists),
+                |ui| {
+                    widgets::error_row(ui, app, &message, Some(Page::Home));
+                },
+            );
             return;
         }
     };
     if artists.is_empty() {
         return;
     }
-    widgets::shelf(ui, &palette, "top-artists", "Your top artists", |ui| {
-        for artist in &artists {
-            let card = widgets::card(
-                ui,
-                app,
-                pick_image(&artist.images, 300),
-                &artist.name,
-                "Artist",
-                true,
-                true,
-            );
-            if card.play {
-                app.actions.push(Action::PlayContext {
-                    uri: artist.uri.clone(),
-                    offset_uri: None,
-                    offset_index: None,
-                });
+    widgets::shelf(
+        ui,
+        &palette,
+        "top-artists",
+        translator.text(TextKey::HomeTopArtists),
+        |ui| {
+            for artist in &artists {
+                let card = widgets::card(
+                    ui,
+                    app,
+                    pick_image(&artist.images, 300),
+                    &artist.name,
+                    translator.text(TextKey::CommonArtist),
+                    true,
+                    true,
+                );
+                if card.play {
+                    app.actions.push(Action::PlayContext {
+                        uri: artist.uri.clone(),
+                        offset_uri: None,
+                        offset_index: None,
+                    });
+                }
+                if card.clicked {
+                    app.actions
+                        .push(Action::Open(Page::Artist(artist.id.clone())));
+                }
             }
-            if card.clicked {
-                app.actions
-                    .push(Action::Open(Page::Artist(artist.id.clone())));
-            }
-        }
-    });
+        },
+    );
 }
 
 fn track_list(
@@ -405,18 +463,20 @@ fn track_list(
 
 fn top_tracks(app: &mut App, ui: &mut egui::Ui) {
     let tracks = app.home.top_tracks.clone();
+    let translator = app.translator;
     track_list(
         app,
         ui,
-        "Your top songs",
+        translator.text(TextKey::HomeTopSongs),
         tracks,
         10,
         Some(Page::TopSongs),
-        Some("Show more top songs"),
+        Some(translator.text(TextKey::HomeShowMoreTopSongs)),
     );
 }
 
 fn recommendations(app: &mut App, ui: &mut egui::Ui) {
     let tracks = app.home.recommendations.clone();
-    track_list(app, ui, "Recommended for you", tracks, 20, None, None);
+    let title = app.translator.text(TextKey::HomeRecommended);
+    track_list(app, ui, title, tracks, 20, None, None);
 }

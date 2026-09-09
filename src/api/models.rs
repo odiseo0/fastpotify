@@ -219,6 +219,20 @@ impl Album {
             _ => "Album",
         }
     }
+
+    pub fn kind_text_key(&self) -> crate::i18n::TextKey {
+        match self
+            .album_group
+            .as_deref()
+            .or(self.album_type.as_deref())
+            .unwrap_or("album")
+        {
+            "single" => crate::i18n::TextKey::AlbumKindSingle,
+            "compilation" => crate::i18n::TextKey::AlbumKindCompilation,
+            "appears_on" => crate::i18n::TextKey::AlbumKindAppearsOn,
+            _ => crate::i18n::TextKey::AlbumKindAlbum,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]

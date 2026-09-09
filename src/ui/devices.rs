@@ -4,6 +4,7 @@ use egui::{Align, CornerRadius, Layout, Rect, Sense, pos2, vec2};
 
 use crate::api::models::Device;
 use crate::app::App;
+use crate::i18n::{Message, TextKey};
 use crate::model::Action;
 use crate::theme::{self, Icon};
 
@@ -28,6 +29,7 @@ pub fn device_icon(kind: &str) -> Icon {
 fn enable_playback_row(app: &mut App, ui: &mut egui::Ui) {
     use egui::{Rect, Sense, Vec2, pos2, vec2};
     let palette = app.palette;
+    let translator = app.translator;
     let authorizing = matches!(
         app.local_playback,
         crate::backend::LocalPlayback::Authorizing | crate::backend::LocalPlayback::Connecting
@@ -46,7 +48,9 @@ fn enable_playback_row(app: &mut App, ui: &mut egui::Ui) {
     painter.text(
         pos2(rect.left() + 48.0, rect.center().y - 9.0),
         egui::Align2::LEFT_CENTER,
-        format!("{} (this computer)", app.settings.device_name),
+        translator.message(&Message::DeviceThisComputer {
+            name: app.settings.device_name.clone(),
+        }),
         theme::medium(14.0),
         palette.text,
     );
@@ -54,9 +58,9 @@ fn enable_playback_row(app: &mut App, ui: &mut egui::Ui) {
         pos2(rect.left() + 48.0, rect.center().y + 10.0),
         egui::Align2::LEFT_CENTER,
         if authorizing {
-            "Setting up…"
+            translator.text(TextKey::DevicesSettingUp)
         } else {
-            "Set up playback here"
+            translator.text(TextKey::DevicesSetUpPlayback)
         },
         theme::regular(12.0),
         palette.accent,
@@ -92,6 +96,7 @@ fn enable_playback_row(app: &mut App, ui: &mut egui::Ui) {
 fn receiver_row(app: &mut App, ui: &mut egui::Ui, receiver: &crate::zeroconf::Receiver) {
     use egui::{Rect, Sense, Vec2, pos2, vec2};
     let palette = app.palette;
+    let translator = app.translator;
     let activating = app.activating_receiver.as_deref() == Some(receiver.name.as_str());
     let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), 52.0), Sense::click());
     if response.hovered() && !activating {
@@ -117,9 +122,9 @@ fn receiver_row(app: &mut App, ui: &mut egui::Ui, receiver: &crate::zeroconf::Re
         pos2(rect.left() + 48.0, rect.center().y + 10.0),
         egui::Align2::LEFT_CENTER,
         if activating {
-            "Connecting…"
+            translator.text(TextKey::DevicesConnecting)
         } else {
-            "On your network, click to connect"
+            translator.text(TextKey::DevicesNetworkReceiver)
         },
         theme::regular(12.0),
         palette.secondary,
@@ -149,6 +154,7 @@ pub fn popup(app: &mut App, ctx: &egui::Context) {
         return;
     }
     let palette = app.palette;
+    let translator = app.translator;
     let button = ctx
         .data(|data| data.get_temp::<Rect>(egui::Id::new(BUTTON_RECT_ID)))
         .unwrap_or_else(|| Rect::from_min_size(pos2(400.0, 400.0), vec2(0.0, 0.0)));
@@ -166,7 +172,12 @@ pub fn popup(app: &mut App, ctx: &egui::Context) {
                 ui.set_width(width);
                 ui.horizontal(|ui| {
                     ui.add_space(6.0);
-                    theme::text(ui, "Connect to a device", theme::bold(16.0), palette.text);
+                    theme::text(
+                        ui,
+                        translator.text(TextKey::DevicesHeading),
+                        theme::bold(16.0),
+                        palette.text,
+                    );
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         if app.devices_loading {
                             theme::spinner(ui, 16.0, palette.accent);
@@ -176,7 +187,7 @@ pub fn popup(app: &mut App, ctx: &egui::Context) {
                             15.0,
                             palette.secondary,
                             palette.text,
-                            "Refresh",
+                            translator.text(TextKey::DevicesRefresh),
                         )
                         .clicked()
                         {
@@ -197,7 +208,9 @@ pub fn popup(app: &mut App, ctx: &egui::Context) {
                         0,
                         Device {
                             id: Some(local_id.clone()),
-                            name: format!("{} (this computer)", app.settings.device_name),
+                            name: translator.message(&Message::DeviceThisComputer {
+                                name: app.settings.device_name.clone(),
+                            }),
                             is_active: app.local.is_active(),
                             is_restricted: false,
                             volume_percent: Some(crate::app::volume_to_percent(app.local.volume)),
@@ -228,19 +241,20 @@ pub fn popup(app: &mut App, ctx: &egui::Context) {
                 }
                 if devices.is_empty() && waiting.is_empty() && app.local_ready {
                     ui.add_space(8.0);
-                    theme::subtle(
-                        ui,
-                        &palette,
-                        "No devices found. Open Spotify on another device, then refresh.",
-                    );
+                    theme::subtle(ui, &palette, translator.text(TextKey::DevicesNoneFound));
                     ui.add_space(8.0);
                 }
 
                 for device in &devices {
                     let is_local = device.id.is_some() && device.id == local_id;
                     let active = device.id.is_some() && device.id == active_id;
-                    let name = if is_local && !device.name.contains("this computer") {
-                        format!("{} (this computer)", device.name)
+                    let local_suffix = translator.message(&Message::DeviceThisComputer {
+                        name: String::new(),
+                    });
+                    let name = if is_local && !device.name.ends_with(&local_suffix) {
+                        translator.message(&Message::DeviceThisComputer {
+                            name: device.name.clone(),
+                        })
                     } else {
                         device.name.clone()
                     };
@@ -272,11 +286,11 @@ pub fn popup(app: &mut App, ctx: &egui::Context) {
                         color,
                     );
                     let status = if active {
-                        "Listening on this device".to_string()
+                        translator.text(TextKey::DevicesListeningHere).to_string()
                     } else if device.is_restricted {
-                        "Restricted".to_string()
+                        translator.text(TextKey::DevicesRestricted).to_string()
                     } else if is_local {
-                        "Play here".to_string()
+                        translator.text(TextKey::DevicesPlayHere).to_string()
                     } else {
                         device.kind.replace('_', " ")
                     };

@@ -3,6 +3,7 @@
 use egui::{Align, Frame, Layout, Margin, Sense};
 
 use crate::app::App;
+use crate::i18n::{Message, TextKey};
 use crate::model::{Action, Loadable};
 use crate::theme::{self, Icon};
 
@@ -20,6 +21,7 @@ fn blend(from: egui::Color32, to: egui::Color32, t: f32) -> egui::Color32 {
 
 pub fn side_panel(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let panel = egui::Panel::right("lyrics-panel")
         .resizable(true)
         .default_size(app.settings.lyrics_width)
@@ -40,17 +42,35 @@ pub fn side_panel(app: &mut App, ui: &mut egui::Ui) {
         ui.add_space(window_controls.lyrics_top);
         ui.horizontal(|ui| {
             ui.add_space(4.0);
-            theme::text(ui, "Lyrics", theme::bold(18.0), palette.text);
+            theme::text(
+                ui,
+                translator.text(TextKey::CommonLyrics),
+                theme::bold(18.0),
+                palette.text,
+            );
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                if theme::icon_button(ui, Icon::X, 18.0, palette.secondary, palette.text, "Close")
-                    .clicked()
+                if theme::icon_button(
+                    ui,
+                    Icon::X,
+                    18.0,
+                    palette.secondary,
+                    palette.text,
+                    translator.text(TextKey::CommonClose),
+                )
+                .clicked()
                 {
                     app.actions.push(Action::ToggleLyricsPanel);
                 }
                 let loaded = matches!(&app.lyrics, Loadable::Loaded(Some(_)));
                 if loaded
                     && !app.lyrics_following
-                    && theme::pill_button(ui, &palette, "Follow", false).clicked()
+                    && theme::pill_button(
+                        ui,
+                        &palette,
+                        translator.text(TextKey::LyricsFollow),
+                        false,
+                    )
+                    .clicked()
                 {
                     app.lyrics_following = true;
                     app.lyrics_line_shown = None;
@@ -69,13 +89,14 @@ pub fn side_panel(app: &mut App, ui: &mut egui::Ui) {
 
 fn contents(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let Some(now) = app.now_playing() else {
         widgets::empty_state(
             ui,
             &palette,
             Icon::Mic,
-            "Nothing playing",
-            "Play a song to see its lyrics.",
+            translator.text(TextKey::LyricsNothingPlaying),
+            translator.text(TextKey::LyricsPlaySong),
         );
         return;
     };
@@ -85,11 +106,20 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
             return;
         }
         Loadable::Failed(error) => {
-            let message = format!("Couldn't fetch the lyrics: {error}");
+            let message = translator.message(&Message::LyricsFetchFailed {
+                detail: error.clone(),
+            });
             ui.add_space(8.0);
             theme::text(ui, message, theme::regular(13.0), palette.secondary);
             ui.add_space(8.0);
-            if theme::pill_button(ui, &palette, "Try again", false).clicked() {
+            if theme::pill_button(
+                ui,
+                &palette,
+                translator.text(TextKey::CommonTryAgain),
+                false,
+            )
+            .clicked()
+            {
                 app.request_lyrics();
             }
             return;
@@ -99,8 +129,8 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                 ui,
                 &palette,
                 Icon::Mic,
-                "No lyrics",
-                "No lyrics found for this track.",
+                translator.text(TextKey::LyricsNoLyrics),
+                translator.text(TextKey::LyricsNoLyricsDetail),
             );
             return;
         }
@@ -109,8 +139,8 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                 ui,
                 &palette,
                 Icon::Music,
-                "Instrumental",
-                "No timed lyrics for this track.",
+                translator.text(TextKey::LyricsInstrumental),
+                translator.text(TextKey::LyricsInstrumentalDetail),
             );
             return;
         }

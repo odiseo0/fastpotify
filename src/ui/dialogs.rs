@@ -3,6 +3,7 @@
 use egui::{Align, CornerRadius, Frame, Layout, Margin, Stroke};
 
 use crate::app::App;
+use crate::i18n::{Message, TextKey, Translator};
 use crate::model::{Action, Dialog};
 use crate::theme;
 
@@ -11,6 +12,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
         return;
     };
     let palette = app.palette;
+    let translator = app.translator;
     let frame = Frame::new()
         .fill(palette.overlay)
         .stroke(Stroke::new(1.0, palette.outline))
@@ -38,18 +40,18 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                     theme::text(
                         ui,
                         if owned {
-                            "Delete playlist?"
+                            translator.text(TextKey::DialogDeletePlaylist)
                         } else {
-                            "Remove from Your Library?"
+                            translator.text(TextKey::DialogRemoveLibrary)
                         },
                         theme::bold(20.0),
                         palette.text,
                     );
                     ui.add_space(8.0);
                     let body = if owned {
-                        format!("Delete “{name}”? You can recover it from Spotify for 90 days.")
+                        translator.message(&Message::DeletePlaylistDetail { name: name.clone() })
                     } else {
-                        format!("“{name}” will no longer appear in Your Library.")
+                        translator.message(&Message::RemovePlaylistDetail { name: name.clone() })
                     };
                     ui.add(
                         egui::Label::new(
@@ -64,14 +66,25 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                         if theme::pill_button(
                             ui,
                             &palette,
-                            if owned { "Delete" } else { "Remove" },
+                            translator.text(if owned {
+                                TextKey::DialogDelete
+                            } else {
+                                TextKey::DialogRemove
+                            }),
                             true,
                         )
                         .clicked()
                         {
                             app.actions.push(Action::DeletePlaylist(id.clone()));
                         }
-                        if theme::pill_button(ui, &palette, "Cancel", false).clicked() {
+                        if theme::pill_button(
+                            ui,
+                            &palette,
+                            translator.text(TextKey::CommonCancel),
+                            false,
+                        )
+                        .clicked()
+                        {
                             app.actions.push(Action::CloseDialog);
                         }
                     });
@@ -86,15 +99,16 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                     theme::text(
                         ui,
                         if multiple {
-                            "Songs already in this playlist"
+                            translator.text(TextKey::DialogSongsAlreadyPlaylist)
                         } else {
-                            "Song already in this playlist"
+                            translator.text(TextKey::DialogSongAlreadyPlaylist)
                         },
                         theme::bold(20.0),
                         palette.text,
                     );
                     ui.add_space(8.0);
-                    let body = duplicate_message(&playlist_name, &items, &duplicate_uris);
+                    let body =
+                        duplicate_message(translator, &playlist_name, &items, &duplicate_uris);
                     ui.add(
                         egui::Label::new(
                             egui::RichText::new(body)
@@ -105,20 +119,39 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                     );
                     ui.add_space(20.0);
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if theme::pill_button(ui, &palette, "Add anyway", true).clicked() {
+                        if theme::pill_button(
+                            ui,
+                            &palette,
+                            translator.text(TextKey::DialogAddAnyway),
+                            true,
+                        )
+                        .clicked()
+                        {
                             app.actions.push(Action::ConfirmAddToPlaylist {
                                 playlist_id: playlist_id.clone(),
                                 playlist_name: playlist_name.clone(),
                                 items: items.clone(),
                             });
                         }
-                        if theme::pill_button(ui, &palette, "Cancel", false).clicked() {
+                        if theme::pill_button(
+                            ui,
+                            &palette,
+                            translator.text(TextKey::CommonCancel),
+                            false,
+                        )
+                        .clicked()
+                        {
                             app.actions.push(Action::CloseDialog);
                         }
                     });
                 }
                 Dialog::Shortcuts => {
-                    theme::text(ui, "Keyboard shortcuts", theme::bold(20.0), palette.text);
+                    theme::text(
+                        ui,
+                        translator.text(TextKey::CommonKeyboardShortcuts),
+                        theme::bold(20.0),
+                        palette.text,
+                    );
                     ui.add_space(12.0);
                     // `theme::text` truncates, which in a grid makes each cell
                     // claim almost no width and turns "Ctrl+Shift+A" into
@@ -157,7 +190,14 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                         });
                     ui.add_space(16.0);
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if theme::pill_button(ui, &palette, "Done", true).clicked() {
+                        if theme::pill_button(
+                            ui,
+                            &palette,
+                            translator.text(TextKey::DialogDone),
+                            true,
+                        )
+                        .clicked()
+                        {
                             app.actions.push(Action::CloseDialog);
                         }
                     });
@@ -165,25 +205,29 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                 Dialog::PremiumNeeded => {
                     theme::text(
                         ui,
-                        "This account cannot play music here",
+                        translator.text(TextKey::DialogPremiumTitle),
                         theme::bold(20.0),
                         palette.text,
                     );
                     ui.add_space(8.0);
                     ui.add(
                         egui::Label::new(
-                            egui::RichText::new(
-                                "Playback needs Spotify Premium. Free accounts can browse \
-                                 and search, but cannot play music through Fastpotify.",
-                            )
-                            .font(theme::regular(14.0))
-                            .color(palette.secondary),
+                            egui::RichText::new(translator.text(TextKey::DialogPremiumDetail))
+                                .font(theme::regular(14.0))
+                                .color(palette.secondary),
                         )
                         .wrap(),
                     );
                     ui.add_space(20.0);
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if theme::pill_button(ui, &palette, "OK", true).clicked() {
+                        if theme::pill_button(
+                            ui,
+                            &palette,
+                            translator.text(TextKey::DialogOk),
+                            true,
+                        )
+                        .clicked()
+                        {
                             app.actions.push(Action::CloseDialog);
                         }
                     });
@@ -197,32 +241,24 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
 }
 
 fn duplicate_message(
+    translator: Translator,
     playlist_name: &str,
     items: &[crate::api::models::PlayableItem],
     duplicate_uris: &[String],
 ) -> String {
     let mut seen = std::collections::HashSet::new();
-    let names: Vec<&str> = items
+    let names: Vec<String> = items
         .iter()
         .filter(|item| duplicate_uris.iter().any(|uri| uri == item.uri()))
         .map(crate::api::models::PlayableItem::name)
-        .filter(|name| seen.insert(*name))
+        .filter(|name| seen.insert((*name).to_string()))
+        .map(str::to_string)
         .collect();
-    let named = match names.as_slice() {
-        [] => "This song".to_string(),
-        [name] => format!("“{name}”"),
-        [first, second] => format!("“{first}” and “{second}”"),
-        [first, second, rest @ ..] => {
-            format!("“{first}”, “{second}”, and {} more", rest.len())
-        }
-    };
-    let verb = if names.len() <= 1 { "is" } else { "are" };
-    let question = if items.len() == 1 {
-        "Add it again?"
-    } else {
-        "Add all selected songs anyway?"
-    };
-    format!("{named} {verb} already in “{playlist_name}”. {question}")
+    translator.message(&Message::DuplicateSongs {
+        playlist_name: playlist_name.to_string(),
+        names,
+        selected_count: items.len(),
+    })
 }
 
 fn text_field(
@@ -256,6 +292,7 @@ fn text_field(
 
 fn create_playlist(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let busy = app.playlist_busy;
     let Some(Dialog::CreatePlaylist {
         name,
@@ -265,24 +302,48 @@ fn create_playlist(app: &mut App, ui: &mut egui::Ui) {
     else {
         return;
     };
-    theme::text(ui, "New playlist", theme::bold(20.0), palette.text);
+    theme::text(
+        ui,
+        translator.text(TextKey::DialogNewPlaylist),
+        theme::bold(20.0),
+        palette.text,
+    );
     ui.add_space(12.0);
-    theme::text(ui, "Name", theme::medium(13.0), palette.secondary);
-    let field = text_field(ui, &palette, "playlist-name", name, "My playlist", true);
+    theme::text(
+        ui,
+        translator.text(TextKey::DialogName),
+        theme::medium(13.0),
+        palette.secondary,
+    );
+    let field = text_field(
+        ui,
+        &palette,
+        "playlist-name",
+        name,
+        translator.text(TextKey::DialogPlaylistNameHint),
+        true,
+    );
     ui.add_space(10.0);
     ui.horizontal(|ui| {
-        super::widgets::switch(ui, &palette, "Public playlist", public);
-        theme::text(ui, "Public playlist", theme::regular(14.0), palette.text);
+        super::widgets::switch(
+            ui,
+            &palette,
+            translator.text(TextKey::DialogPublicPlaylist),
+            public,
+        );
+        theme::text(
+            ui,
+            translator.text(TextKey::DialogPublicPlaylist),
+            theme::regular(14.0),
+            palette.text,
+        );
     });
     if !add_uris.is_empty() {
         ui.add_space(6.0);
         let count = add_uris.len();
         theme::text(
             ui,
-            format!(
-                "{count} song{} will be added.",
-                if count == 1 { "" } else { "s" }
-            ),
+            translator.message(&Message::PlaylistSongsAdded { count }),
             theme::regular(13.0),
             palette.secondary,
         );
@@ -296,7 +357,10 @@ fn create_playlist(app: &mut App, ui: &mut egui::Ui) {
         if busy {
             theme::spinner(ui, 18.0, palette.accent);
         } else {
-            let create = theme::pill_button(ui, &palette, "Create", true).clicked() || submit;
+            let create =
+                theme::pill_button(ui, &palette, translator.text(TextKey::DialogCreate), true)
+                    .clicked()
+                    || submit;
             if create && !name_value.is_empty() {
                 app.actions.push(Action::CreatePlaylist {
                     name: name_value.clone(),
@@ -304,7 +368,9 @@ fn create_playlist(app: &mut App, ui: &mut egui::Ui) {
                     add_uris: uris.clone(),
                 });
             }
-            if theme::pill_button(ui, &palette, "Cancel", false).clicked() {
+            if theme::pill_button(ui, &palette, translator.text(TextKey::CommonCancel), false)
+                .clicked()
+            {
                 app.actions.push(Action::CloseDialog);
             }
         }
@@ -313,6 +379,7 @@ fn create_playlist(app: &mut App, ui: &mut egui::Ui) {
 
 fn edit_playlist(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let busy = app.playlist_busy;
     let Some(Dialog::EditPlaylist {
         id,
@@ -323,12 +390,34 @@ fn edit_playlist(app: &mut App, ui: &mut egui::Ui) {
     else {
         return;
     };
-    theme::text(ui, "Edit details", theme::bold(20.0), palette.text);
+    theme::text(
+        ui,
+        translator.text(TextKey::DialogEditDetails),
+        theme::bold(20.0),
+        palette.text,
+    );
     ui.add_space(12.0);
-    theme::text(ui, "Name", theme::medium(13.0), palette.secondary);
-    text_field(ui, &palette, "edit-name", name, "Playlist name", true);
+    theme::text(
+        ui,
+        translator.text(TextKey::DialogName),
+        theme::medium(13.0),
+        palette.secondary,
+    );
+    text_field(
+        ui,
+        &palette,
+        "edit-name",
+        name,
+        translator.text(TextKey::DialogPlaylistNameHint),
+        true,
+    );
     ui.add_space(10.0);
-    theme::text(ui, "Description", theme::medium(13.0), palette.secondary);
+    theme::text(
+        ui,
+        translator.text(TextKey::DialogDescription),
+        theme::medium(13.0),
+        palette.secondary,
+    );
     Frame::new()
         .fill(palette.surface)
         .corner_radius(CornerRadius::same(6))
@@ -337,7 +426,10 @@ fn edit_playlist(app: &mut App, ui: &mut egui::Ui) {
             ui.add(
                 egui::TextEdit::multiline(description)
                     .id(egui::Id::new("edit-description"))
-                    .hint_text(egui::RichText::new("Optional description").color(palette.dim))
+                    .hint_text(
+                        egui::RichText::new(translator.text(TextKey::DialogOptionalDescription))
+                            .color(palette.dim),
+                    )
                     .font(theme::regular(14.0))
                     .frame(egui::Frame::NONE)
                     .desired_rows(3)
@@ -346,8 +438,18 @@ fn edit_playlist(app: &mut App, ui: &mut egui::Ui) {
         });
     ui.add_space(10.0);
     ui.horizontal(|ui| {
-        super::widgets::switch(ui, &palette, "Public playlist", public);
-        theme::text(ui, "Public playlist", theme::regular(14.0), palette.text);
+        super::widgets::switch(
+            ui,
+            &palette,
+            translator.text(TextKey::DialogPublicPlaylist),
+            public,
+        );
+        theme::text(
+            ui,
+            translator.text(TextKey::DialogPublicPlaylist),
+            theme::regular(14.0),
+            palette.text,
+        );
     });
     ui.add_space(20.0);
     let id = id.clone();
@@ -358,7 +460,10 @@ fn edit_playlist(app: &mut App, ui: &mut egui::Ui) {
         if busy {
             theme::spinner(ui, 18.0, palette.accent);
         } else {
-            if theme::pill_button(ui, &palette, "Save", true).clicked() && !name_value.is_empty() {
+            if theme::pill_button(ui, &palette, translator.text(TextKey::DialogSave), true)
+                .clicked()
+                && !name_value.is_empty()
+            {
                 app.actions.push(Action::UpdatePlaylist {
                     id: id.clone(),
                     name: name_value.clone(),
@@ -366,7 +471,9 @@ fn edit_playlist(app: &mut App, ui: &mut egui::Ui) {
                     public: public_value,
                 });
             }
-            if theme::pill_button(ui, &palette, "Cancel", false).clicked() {
+            if theme::pill_button(ui, &palette, translator.text(TextKey::CommonCancel), false)
+                .clicked()
+            {
                 app.actions.push(Action::CloseDialog);
             }
         }
@@ -377,6 +484,8 @@ fn edit_playlist(app: &mut App, ui: &mut egui::Ui) {
 mod tests {
     use super::duplicate_message;
     use crate::api::models::{PlayableItem, Track};
+    use crate::i18n::Translator;
+    use crate::settings::LanguageChoice;
 
     fn song(uri: &str, name: &str) -> PlayableItem {
         PlayableItem::Track(Track {
@@ -390,6 +499,7 @@ mod tests {
     fn duplicate_dialog_names_the_song() {
         let items = vec![song("spotify:track:honey", "Honey")];
         let message = duplicate_message(
+            Translator::new(LanguageChoice::English),
             "The best music ever",
             &items,
             &["spotify:track:honey".into()],
@@ -408,6 +518,7 @@ mod tests {
             song("spotify:track:new", "New song"),
         ];
         let message = duplicate_message(
+            Translator::new(LanguageChoice::English),
             "The best music ever",
             &items,
             &["spotify:track:honey".into()],

@@ -4,6 +4,7 @@ use egui::{Align, CornerRadius, Layout, Sense, Vec2, pos2, vec2};
 
 use crate::api::models::pick_image;
 use crate::app::App;
+use crate::i18n::{Message, TextKey};
 use crate::model::{Action, Page};
 use crate::theme::{self, Icon, Palette};
 
@@ -49,6 +50,7 @@ fn nav_button(
 
 pub fn show(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let width = ui.available_width();
     let window_controls = super::window_controls_reservation(
         ui.ctx(),
@@ -78,7 +80,10 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     &palette,
                     Icon::PanelLeft,
                     true,
-                    super::keys::platform_shortcut("Show sidebar (Ctrl+B)", "Show sidebar (Cmd+B)"),
+                    super::keys::platform_shortcut(
+                        translator.text(TextKey::TopbarShowSidebarControl),
+                        translator.text(TextKey::TopbarShowSidebarCommand),
+                    ),
                 )
                 .clicked()
                 {
@@ -87,11 +92,26 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 ui.add_space(2.0);
             }
             if !app.settings.sidebar_visible
-                && nav_button(ui, &palette, Icon::House, true, "Home").clicked()
+                && nav_button(
+                    ui,
+                    &palette,
+                    Icon::House,
+                    true,
+                    translator.text(TextKey::CommonHome),
+                )
+                .clicked()
             {
                 app.actions.push(Action::Open(Page::Home));
             }
-            if nav_button(ui, &palette, Icon::ChevronLeft, app.can_go_back(), "Back").clicked() {
+            if nav_button(
+                ui,
+                &palette,
+                Icon::ChevronLeft,
+                app.can_go_back(),
+                translator.text(TextKey::CommonBack),
+            )
+            .clicked()
+            {
                 app.actions.push(Action::Back);
             }
             if nav_button(
@@ -99,7 +119,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 &palette,
                 Icon::ChevronRight,
                 app.can_go_forward(),
-                "Forward",
+                translator.text(TextKey::CommonForward),
             )
             .clicked()
             {
@@ -116,7 +136,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 &palette,
                 id,
                 &mut app.search.query,
-                "What do you want to play?",
+                translator.text(TextKey::TopbarSearchHint),
                 search_width,
             );
             if app.search.focus_requested {
@@ -219,21 +239,30 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                             });
                         }
                         super::widgets::menu_separator(ui, &palette);
-                        if super::widgets::menu_item(ui, &palette, Some(Icon::Settings), "Settings")
-                        {
+                        if super::widgets::menu_item(
+                            ui,
+                            &palette,
+                            Some(Icon::Settings),
+                            translator.text(TextKey::CommonSettings),
+                        ) {
                             app.actions.push(Action::Open(Page::Settings));
                         }
                         if super::widgets::menu_item(
                             ui,
                             &palette,
                             Some(Icon::Info),
-                            "Keyboard shortcuts",
+                            translator.text(TextKey::CommonKeyboardShortcuts),
                         ) {
                             app.actions
                                 .push(Action::ShowDialog(crate::model::Dialog::Shortcuts));
                         }
                         super::widgets::menu_separator(ui, &palette);
-                        if super::widgets::menu_item(ui, &palette, Some(Icon::LogOut), "Sign out") {
+                        if super::widgets::menu_item(
+                            ui,
+                            &palette,
+                            Some(Icon::LogOut),
+                            translator.text(TextKey::CommonSignOut),
+                        ) {
                             app.actions.push(Action::SignOut);
                         }
                     });
@@ -244,7 +273,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     19.0,
                     palette.secondary,
                     palette.text,
-                    "Settings",
+                    translator.text(TextKey::CommonSettings),
                 )
                 .clicked()
                 {
@@ -261,8 +290,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     },
                     palette.text,
                     super::keys::platform_shortcut(
-                        "MilkDrop visualiser (Ctrl+Shift+K)",
-                        "MilkDrop visualiser (Cmd+Shift+K)",
+                        translator.text(TextKey::TopbarMilkdropControl),
+                        translator.text(TextKey::TopbarMilkdropCommand),
                     ),
                 )
                 .clicked()
@@ -276,8 +305,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     palette.secondary,
                     palette.text,
                     super::keys::platform_shortcut(
-                        "Winamp mini player (Ctrl+M)",
-                        "Winamp mini player (Cmd+Shift+M)",
+                        translator.text(TextKey::TopbarWinampControl),
+                        translator.text(TextKey::TopbarWinampCommand),
                     ),
                 )
                 .clicked()
@@ -292,16 +321,17 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     .busy(std::time::Duration::from_millis(1000))
                 {
                     theme::spinner(ui, 15.0, palette.secondary)
-                        .on_hover_text("Waiting for Spotify…");
+                        .on_hover_text(translator.text(TextKey::TopbarWaitingSpotify));
                 }
                 // Where playback is.
                 if let Some(now) = app.now_playing()
                     && !now.local
                 {
-                    let label = format!(
-                        "Playing on {}",
-                        now.device_name.unwrap_or_else(|| "another device".into())
-                    );
+                    let label = translator.message(&Message::PlayingOnDevice {
+                        name: now.device_name.unwrap_or_else(|| {
+                            translator.text(TextKey::TopbarAnotherDevice).into()
+                        }),
+                    });
                     let galley =
                         ui.painter()
                             .layout_no_wrap(label, theme::medium(12.5), palette.accent);
@@ -334,7 +364,9 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 // A newer release. Most people never visit a releases page,
                 // so the app says so, quietly, until they do.
                 if let Some(update) = app.update.clone() {
-                    let label = format!("Update to {}", update.version);
+                    let label = translator.message(&Message::UpdateToVersion {
+                        version: update.version.clone(),
+                    });
                     let galley =
                         ui.painter()
                             .layout_no_wrap(label, theme::medium(12.5), palette.accent);
@@ -359,10 +391,9 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     );
                     if response
                         .on_hover_cursor(egui::CursorIcon::PointingHand)
-                        .on_hover_text(format!(
-                            "Version {} is available. Open the download page.",
-                            update.version
-                        ))
+                        .on_hover_text(translator.message(&Message::UpdateAvailableDetail {
+                            version: update.version,
+                        }))
                         .clicked()
                     {
                         app.actions.push(Action::OpenUrl(update.url));

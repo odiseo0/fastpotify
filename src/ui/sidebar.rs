@@ -4,6 +4,7 @@ use egui::{Align, CornerRadius, Frame, Layout, Margin, Rect, Sense, Vec2, pos2, 
 
 use crate::api::models::pick_image;
 use crate::app::App;
+use crate::i18n::{Message, TextKey, Translator};
 use crate::model::{Action, Dialog, DragEntry, DragTrack, Loadable, Page};
 use crate::theme::{self, Icon, Palette};
 
@@ -171,10 +172,9 @@ fn folder_rows(app: &App, user_id: &str, entries: &mut Vec<Entry>) {
                         } else {
                             name.clone()
                         },
-                        subtitle: match count {
-                            1 => "Folder • 1 playlist".to_string(),
-                            n => format!("Folder • {n} playlists"),
-                        },
+                        subtitle: app
+                            .translator
+                            .message(&Message::FolderPlaylistCount { count }),
                         page: Page::Home,
                         uri: String::new(),
                         round: false,
@@ -211,6 +211,7 @@ fn folder_rows(app: &App, user_id: &str, entries: &mut Vec<Entry>) {
                     user_id,
                     app.can_edit_playlist(playlist),
                     depth,
+                    app.translator,
                 ));
             }
         }
@@ -225,6 +226,7 @@ fn folder_rows(app: &App, user_id: &str, entries: &mut Vec<Entry>) {
                 user_id,
                 app.can_edit_playlist(playlist),
                 0,
+                app.translator,
             ));
         }
     }
@@ -265,11 +267,14 @@ fn playlist_entry(
     user_id: &str,
     editable: bool,
     depth: u8,
+    translator: Translator,
 ) -> Entry {
     Entry {
         image: pick_image(&playlist.images, 64).map(str::to_string),
         name: playlist.name.clone(),
-        subtitle: format!("Playlist • {}", playlist.owner_name()),
+        subtitle: translator.message(&Message::SearchPlaylistBy {
+            owner: playlist.owner_name().to_string(),
+        }),
         page: Page::Playlist(playlist.id.clone()),
         uri: playlist.uri.clone(),
         round: false,
@@ -316,12 +321,29 @@ fn nav_row(
 
 fn contents(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let translator = app.translator;
     let page = app.page().clone();
     ui.add_space(4.0);
-    if nav_row(ui, &palette, Icon::House, "Home", page == Page::Home).clicked() {
+    if nav_row(
+        ui,
+        &palette,
+        Icon::House,
+        translator.text(TextKey::CommonHome),
+        page == Page::Home,
+    )
+    .clicked()
+    {
         app.actions.push(Action::Open(Page::Home));
     }
-    if nav_row(ui, &palette, Icon::Search, "Search", page == Page::Search).clicked() {
+    if nav_row(
+        ui,
+        &palette,
+        Icon::Search,
+        translator.text(TextKey::CommonSearch),
+        page == Page::Search,
+    )
+    .clicked()
+    {
         app.actions.push(Action::FocusSearch);
     }
     ui.add_space(10.0);
@@ -347,7 +369,12 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
         ui.add_space(6.0);
         theme::icon(ui, Icon::Library, 22.0, palette.secondary);
         ui.add_space(2.0);
-        theme::text(ui, "Library", theme::bold(15.0), palette.text);
+        theme::text(
+            ui,
+            translator.text(TextKey::SidebarLibrary),
+            theme::bold(15.0),
+            palette.text,
+        );
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
             ui.spacing_mut().item_spacing.x = 2.0;
             if theme::icon_button(
@@ -356,7 +383,10 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                 16.0,
                 palette.secondary,
                 palette.text,
-                super::keys::platform_shortcut("Hide sidebar (Ctrl+B)", "Hide sidebar (Cmd+B)"),
+                super::keys::platform_shortcut(
+                    translator.text(TextKey::SidebarHideControl),
+                    translator.text(TextKey::SidebarHideCommand),
+                ),
             )
             .clicked()
             {
@@ -369,7 +399,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                 16.0,
                 palette.secondary,
                 palette.text,
-                "Create a playlist",
+                translator.text(TextKey::SidebarCreatePlaylist),
             )
             .clicked()
             {
@@ -385,7 +415,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                 16.0,
                 palette.secondary,
                 palette.text,
-                "Search Your Library",
+                translator.text(TextKey::SidebarSearchLibrary),
             )
             .clicked()
             {
@@ -403,10 +433,10 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(6.0, 6.0);
         for (value, label) in [
-            (Filter::Playlists, "Playlists"),
-            (Filter::Albums, "Albums"),
-            (Filter::Artists, "Artists"),
-            (Filter::Podcasts, "Podcasts"),
+            (Filter::Playlists, translator.text(TextKey::CommonPlaylists)),
+            (Filter::Albums, translator.text(TextKey::CommonAlbums)),
+            (Filter::Artists, translator.text(TextKey::CommonArtists)),
+            (Filter::Podcasts, translator.text(TextKey::CommonPodcasts)),
         ] {
             if theme::soft_button(ui, &palette, None, label, filter == value).clicked() {
                 filter = value;
@@ -424,7 +454,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
             &palette,
             egui::Id::new("sidebar-search"),
             &mut app.library.filter,
-            "Search in Your Library",
+            translator.text(TextKey::SidebarSearchLibrary),
             ui.available_width() - 4.0,
         );
         if focus_search {
@@ -461,13 +491,16 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
     let mut more_page: Option<Page> = None;
     match filter {
         Filter::Playlists => {
-            if needle.is_empty() || "liked songs".contains(&needle) {
+            let liked_name = translator.text(TextKey::CommonLikedSongs);
+            if needle.is_empty() || liked_name.to_lowercase().contains(&needle) {
                 entries.push(Entry {
                     image: None,
-                    name: "Liked Songs".into(),
+                    name: liked_name.into(),
                     subtitle: match app.library.liked.total {
-                        Some(total) => format!("Playlist • {total} songs"),
-                        None => "Playlist".into(),
+                        Some(total) => {
+                            translator.message(&Message::PlaylistSongCount { count: total })
+                        }
+                        None => translator.text(TextKey::CommonPlaylist).into(),
                     },
                     page: Page::LikedSongs,
                     uri: String::new(),
@@ -509,7 +542,9 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                         entries.push(Entry {
                             image: pick_image(&playlist.images, 64).map(str::to_string),
                             name: playlist.name.clone(),
-                            subtitle: format!("Playlist • {}", playlist.owner_name()),
+                            subtitle: translator.message(&Message::SearchPlaylistBy {
+                                owner: playlist.owner_name().to_string(),
+                            }),
                             page: Page::Playlist(playlist.id.clone()),
                             uri: playlist.uri.clone(),
                             round: false,
@@ -543,7 +578,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                     name: album.name.clone(),
                     subtitle: format!(
                         "{} • {}",
-                        album.kind_label(),
+                        translator.text(album.kind_text_key()),
                         crate::api::models::join_names(
                             album.artists.iter().map(|a| a.name.as_str())
                         )
@@ -573,7 +608,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                 entries.push(Entry {
                     image: pick_image(&artist.images, 64).map(str::to_string),
                     name: artist.name.clone(),
-                    subtitle: "Artist".into(),
+                    subtitle: translator.text(TextKey::CommonArtist).into(),
                     page: Page::Artist(artist.id.clone()),
                     uri: artist.uri.clone(),
                     round: true,
@@ -600,7 +635,9 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                 entries.push(Entry {
                     image: pick_image(&show.images, 64).map(str::to_string),
                     name: show.name.clone(),
-                    subtitle: format!("Podcast • {}", show.publisher),
+                    subtitle: translator.message(&Message::SearchPodcastBy {
+                        publisher: show.publisher.clone(),
+                    }),
                     page: Page::Show(show.id.clone()),
                     uri: show.uri.clone(),
                     round: false,
@@ -678,9 +715,9 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                     ui,
                     &palette,
                     if needle.is_empty() {
-                        "Nothing here yet."
+                        translator.text(TextKey::SidebarNothingHere)
                     } else {
-                        "No matches."
+                        translator.text(TextKey::SidebarNoMatches)
                     },
                 );
             }
@@ -1057,7 +1094,11 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                                 ui,
                                 &palette,
                                 Some(if pinned { Icon::PinOff } else { Icon::Pin }),
-                                if pinned { "Unpin" } else { "Pin to top" },
+                                translator.text(if pinned {
+                                    TextKey::SidebarUnpin
+                                } else {
+                                    TextKey::SidebarPinTop
+                                }),
                             ) {
                                 if pinned {
                                     app.settings
@@ -1074,7 +1115,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                                     ui,
                                     &palette,
                                     Some(Icon::Clock),
-                                    "Sort by recently played",
+                                    translator.text(TextKey::SidebarSortRecent),
                                 )
                             {
                                 // Clear the custom order without confirmation.
@@ -1086,8 +1127,12 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
                     egui::Popup::context_menu(&response)
                         .frame(super::widgets::menu_frame(&palette))
                         .show(|ui| {
-                            if super::widgets::menu_item(ui, &palette, Some(Icon::Play), "Play")
-                                && let Some(user) = &app.user
+                            if super::widgets::menu_item(
+                                ui,
+                                &palette,
+                                Some(Icon::Play),
+                                translator.text(TextKey::CommonPlay),
+                            ) && let Some(user) = &app.user
                             {
                                 app.actions.push(Action::PlayContext {
                                     uri: format!("spotify:user:{}:collection", user.id),

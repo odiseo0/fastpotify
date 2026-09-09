@@ -6,6 +6,7 @@ use egui::{Align, Layout, Rect, Sense, Vec2, pos2, vec2};
 
 use crate::api::models::{Album, PlayableItem, Playlist, pick_image};
 use crate::app::App;
+use crate::i18n::TextKey;
 use crate::model::{
     Action, Dialog, DragTrack, Loadable, Page, PagedList, RowContext, SortColumn, TableItem,
     TableRowsCache, TableSort,
@@ -114,7 +115,7 @@ pub struct Actions<'a> {
     pub view: Option<Arc<[String]>>,
     pub saved: Option<(String, bool)>,
     pub saved_icons: (Icon, Icon),
-    pub saved_tooltips: (&'a str, &'a str),
+    pub saved_tooltips: (TextKey, TextKey),
     pub owned_playlist: Option<Playlist>,
     pub name: &'a str,
 }
@@ -183,11 +184,11 @@ pub fn actions_row(
                 },
                 palette.text,
                 if shuffling_here {
-                    "Shuffle off"
+                    app.translator.text(TextKey::CollectionShuffleOff)
                 } else if context_here {
-                    "Shuffle"
+                    app.translator.text(TextKey::PlayerShuffle)
                 } else {
-                    "Shuffle play"
+                    app.translator.text(TextKey::MenuShufflePlay)
                 },
             )
             .clicked()
@@ -203,13 +204,13 @@ pub fn actions_row(
             let (icon, tooltip, color) = if *saved {
                 (
                     actions.saved_icons.1,
-                    actions.saved_tooltips.1,
+                    app.translator.text(actions.saved_tooltips.1),
                     palette.accent,
                 )
             } else {
                 (
                     actions.saved_icons.0,
-                    actions.saved_tooltips.0,
+                    app.translator.text(actions.saved_tooltips.0),
                     palette.secondary,
                 )
             };
@@ -224,7 +225,7 @@ pub fn actions_row(
                 26.0,
                 palette.secondary,
                 palette.text,
-                "More",
+                app.translator.text(TextKey::CommonMore),
             );
             egui::Popup::menu(&more)
                 .frame(widgets::menu_frame(&palette))
@@ -245,7 +246,7 @@ pub fn actions_row(
                     &palette,
                     egui::Id::new(("collection-filter", actions.name)),
                     filter,
-                    "Filter",
+                    app.translator.text(TextKey::CollectionFilter),
                     220.0,
                 );
             });
@@ -266,7 +267,12 @@ fn playlist_position_jump(
         *position = base_offset.saturating_add(1).min(total);
     }
     ui.horizontal(|ui| {
-        theme::text(ui, "Go to song", theme::medium(13.0), app.palette.secondary);
+        theme::text(
+            ui,
+            app.translator.text(TextKey::CollectionGoSong),
+            theme::medium(13.0),
+            app.palette.secondary,
+        );
         let field = ui.add(
             egui::DragValue::new(position)
                 .range(1..=total)
@@ -274,7 +280,16 @@ fn playlist_position_jump(
                 .max_decimals(0),
         );
         let submitted = field.lost_focus() && ui.input(|input| input.key_pressed(egui::Key::Enter));
-        if submitted || theme::soft_button(ui, &app.palette, None, "Go", false).clicked() {
+        if submitted
+            || theme::soft_button(
+                ui,
+                &app.palette,
+                None,
+                app.translator.text(TextKey::CollectionGo),
+                false,
+            )
+            .clicked()
+        {
             app.actions.push(Action::JumpToPlaylistPosition {
                 id: id.to_string(),
                 position: *position,
@@ -447,6 +462,7 @@ pub fn table(app: &mut App, ui: &mut egui::Ui, table: Table<'_>) {
         && let Some(column) = widgets::table_header(
             ui,
             &palette,
+            app.translator,
             table.show_album,
             table.show_added,
             table.show_added_by,
@@ -624,8 +640,8 @@ pub fn table(app: &mut App, ui: &mut egui::Ui, table: Table<'_>) {
             ui,
             &palette,
             Icon::Music,
-            "Nothing here yet",
-            "Added songs appear here.",
+            app.translator.text(TextKey::CollectionNothingHere),
+            app.translator.text(TextKey::CollectionAddedSongs),
         );
     } else if entry.visible.is_empty()
         && !needle.is_empty()
@@ -756,11 +772,16 @@ fn items_of(
 pub fn top_songs(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
     ui.add_space(12.0);
-    theme::text(ui, "Your top songs", theme::bold(30.0), palette.text);
+    theme::text(
+        ui,
+        app.translator.text(TextKey::HomeTopSongs),
+        theme::bold(30.0),
+        palette.text,
+    );
     ui.add_space(4.0);
     theme::text(
         ui,
-        "Your most-played tracks from the last four weeks.",
+        app.translator.text(TextKey::CollectionTopSongsDetail),
         theme::regular(13.5),
         palette.secondary,
     );
@@ -894,11 +915,12 @@ pub fn playlist(app: &mut App, ui: &mut egui::Ui, id: &str) {
                     image: pick_image(&playlist.images, 300),
                     liked: false,
                     kind: if made_together {
-                        "Collaborative Playlist"
+                        app.translator
+                            .text(TextKey::CollectionCollaborativePlaylist)
                     } else if playlist.public == Some(true) {
-                        "Public Playlist"
+                        app.translator.text(TextKey::CollectionPublicPlaylist)
                     } else {
-                        "Playlist"
+                        app.translator.text(TextKey::CommonPlaylist)
                     },
                     title: &playlist.name,
                     description: playlist.description.as_deref().map(util::strip_html),
@@ -932,7 +954,7 @@ pub fn playlist(app: &mut App, ui: &mut egui::Ui, id: &str) {
                     view: view_play,
                     saved: (!owned).then(|| (playlist.uri.clone(), saved)),
                     saved_icons: (Icon::CirclePlus, Icon::CircleCheck),
-                    saved_tooltips: ("Add to Your Library", "Remove from Your Library"),
+                    saved_tooltips: (TextKey::CommonAddLibrary, TextKey::CommonRemoveLibrary),
                     owned_playlist: owned.then_some(playlist_clone),
                     name: &playlist.name,
                 },
@@ -1048,7 +1070,7 @@ pub fn album(app: &mut App, ui: &mut egui::Ui, id: &str) {
                     view: album_view,
                     saved: Some((album.uri.clone(), saved)),
                     saved_icons: (Icon::CirclePlus, Icon::CircleCheck),
-                    saved_tooltips: ("Save to Your Library", "Remove from Your Library"),
+                    saved_tooltips: (TextKey::CollectionSaveLibrary, TextKey::CommonRemoveLibrary),
                     owned_playlist: None,
                     name: &album.name,
                 },
@@ -1248,7 +1270,7 @@ pub fn liked(app: &mut App, ui: &mut egui::Ui) {
             view: liked_view,
             saved: None,
             saved_icons: (Icon::Heart, Icon::HeartFilled),
-            saved_tooltips: ("", ""),
+            saved_tooltips: (TextKey::CommonAddLibrary, TextKey::CommonRemoveLibrary),
             owned_playlist: None,
             name: "Liked Songs",
         },
