@@ -456,13 +456,89 @@ macro_rules! text_keys {
             NoticePlaybackFailedPrefix,
             NoticeSharedSignInFailedPrefix,
             NoticePersonalAuthorizationFailedPrefix,
-            NoticeSignInFailedPrefix
-            ,TrayShowHide
-            ,TrayPlay
-            ,TrayPause
-            ,TrayNext
-            ,TrayPrevious
-            ,TrayQuit
+            NoticeSignInFailedPrefix,
+            TrayShowHide,
+            TrayPlay,
+            TrayPause,
+            TrayNext,
+            TrayPrevious,
+            TrayQuit,
+            AuthSuccessTitle,
+            AuthSuccessHeading,
+            AuthSuccessBody,
+            AuthFailureTitle,
+            AuthFailureHeading,
+            AuthFailureReturn,
+            MilkdropPresetKept,
+            MilkdropPresetFree,
+            MilkdropRandomOrder,
+            MilkdropFolderOrder,
+            MilkdropSongWhenChanged,
+            MilkdropSongAlways,
+            MilkdropSongOff,
+            MilkdropNothingPlaying,
+            MilkdropNoPreset,
+            MilkdropHelpPresets,
+            MilkdropHelpPlayback,
+            MilkdropHelpWindow,
+            MilkdropHelpShow,
+            MilkdropHelpNextPreset,
+            MilkdropHelpPreviousPreset,
+            MilkdropHelpBeatCut,
+            MilkdropHelpKeepPreset,
+            MilkdropHelpOrder,
+            MilkdropHelpRightClick,
+            MilkdropHelpPlayPause,
+            MilkdropHelpPreviousNextSong,
+            MilkdropHelpVolume,
+            MilkdropHelpMute,
+            MilkdropHelpLike,
+            MilkdropHelpShuffle,
+            MilkdropHelpFullscreen,
+            MilkdropHelpLeaveFullscreen,
+            MilkdropHelpMoveResize,
+            MilkdropHelpTheseKeys,
+            MilkdropHelpSongTitle,
+            MilkdropHelpPresetName,
+            MilkdropHelpFps,
+            MacMenuCheckUpdates,
+            MacMenuSettings,
+            MacMenuFile,
+            MacMenuCloseWindow,
+            MacMenuEdit,
+            MacMenuCut,
+            MacMenuCopy,
+            MacMenuPaste,
+            MacMenuSelectAll,
+            MacMenuPlayback,
+            MacMenuPlayPause,
+            MacMenuNextTrack,
+            MacMenuPreviousTrack,
+            MacMenuSeekForward,
+            MacMenuSeekBackward,
+            MacMenuShuffle,
+            MacMenuRepeat,
+            MacMenuIncreaseVolume,
+            MacMenuDecreaseVolume,
+            MacMenuMute,
+            MacMenuView,
+            MacMenuBack,
+            MacMenuForward,
+            MacMenuHome,
+            MacMenuSearch,
+            MacMenuLikedSongs,
+            MacMenuToggleSidebar,
+            MacMenuQueue,
+            MacMenuToggleFullscreen,
+            MacMenuWindow,
+            MacMenuMinimize,
+            MacMenuZoom,
+            MacMenuBringAllToFront,
+            MacMenuHelp,
+            MacMenuKeyboardShortcuts,
+            MacMenuGithub,
+            NoticeDownloadingMilkdropPacks,
+            NoticeFetchPresetsFailedPrefix
         }
     };
 }
@@ -715,6 +791,15 @@ pub enum Message {
     QueuePlaylistName {
         date: String,
     },
+    NoticeMilkdropPresetsAdded {
+        count: usize,
+    },
+    NoticeDownloadingPresetPack {
+        name: String,
+    },
+    NoticeSkinAdded {
+        name: String,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -855,6 +940,25 @@ mod tests {
                 })
                 .starts_with("2 presets")
         );
+    }
+
+    #[test]
+    fn platform_messages_keep_external_values() {
+        let messages = [
+            Message::NoticeMilkdropPresetsAdded { count: 7 },
+            Message::NoticeDownloadingPresetPack {
+                name: "Pack Ω".into(),
+            },
+            Message::NoticeSkinAdded {
+                name: "Skin 日本".into(),
+            },
+        ];
+        for language in LanguageChoice::ALL {
+            let translator = Translator::new(language);
+            assert!(translator.message(&messages[0]).contains('7'));
+            assert!(translator.message(&messages[1]).contains("Pack Ω"));
+            assert!(translator.message(&messages[2]).contains("Skin 日本"));
+        }
     }
 
     #[test]

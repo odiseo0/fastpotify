@@ -30,6 +30,8 @@ use super::engine::Engine;
 use super::overlay::{Backing, Overlay, Place, Row, Span};
 use super::shm::Ring;
 use super::{DEFAULT_FPS, DEFAULT_SECONDS, LAG, MIN_SIZE, Presets, Request};
+use crate::i18n::{TextKey, Translator};
+use crate::settings::LanguageChoice;
 
 /// What the child is told to do, on stdin, as one JSON object per line.
 #[derive(Debug, Default, Deserialize)]
@@ -40,6 +42,7 @@ struct Control {
     /// The playing song, as lines to overlay when it changes.
     song: Option<Vec<String>>,
     close: Option<bool>,
+    language: Option<LanguageChoice>,
 }
 
 /// What the child reports back, on stdout, as one JSON object per line.
@@ -69,6 +72,7 @@ pub struct Args {
     pub fps: u32,
     pub seconds: u32,
     pub scale: u32,
+    pub language: LanguageChoice,
 }
 
 impl Args {
@@ -87,6 +91,7 @@ impl Args {
         let mut fps = DEFAULT_FPS;
         let mut seconds = DEFAULT_SECONDS;
         let mut scale = 1u32;
+        let mut language = LanguageChoice::English;
         while let Some(arg) = all.next() {
             match arg.as_str() {
                 "--milkdrop-shm" => shm = all.next().map(PathBuf::from),
@@ -105,6 +110,13 @@ impl Args {
                 "--milkdrop-scale" => {
                     scale = all.next().and_then(|v| v.parse().ok()).unwrap_or(scale);
                 }
+                "--milkdrop-language" => {
+                    language = all
+                        .next()
+                        .as_deref()
+                        .and_then(parse_language)
+                        .unwrap_or_default();
+                }
                 _ => {}
             }
         }
@@ -117,6 +129,7 @@ impl Args {
             fps,
             seconds,
             scale,
+            language,
         })
     }
 }
@@ -124,6 +137,14 @@ impl Args {
 fn parse_pair(value: &str) -> Option<[f32; 2]> {
     let (a, b) = value.split_once([',', 'x'])?;
     Some([a.trim().parse().ok()?, b.trim().parse().ok()?])
+}
+
+fn parse_language(value: &str) -> Option<LanguageChoice> {
+    match value {
+        "english" => Some(LanguageChoice::English),
+        "spanish" => Some(LanguageChoice::Spanish),
+        _ => None,
+    }
 }
 
 /// Runs the child process to the end; returns its exit code.
@@ -183,6 +204,7 @@ struct Live {
 
 struct Child {
     args: Args,
+    translator: Translator,
     ring: Ring,
     cursor: u64,
     presets: Presets,
@@ -192,6 +214,8 @@ struct Child {
     drawn: Vec<Instant>,
     /// Whether the keys are what is on show, so the same key hides them.
     showing_keys: bool,
+    help_until: Option<Instant>,
+    notice: Option<(TextKey, Instant)>,
     /// Song-title display mode.
     song_shown: SongShown,
     preset_on: bool,
@@ -216,8 +240,10 @@ impl Child {
         let fps = args.fps;
         let scale = args.scale;
         let seconds = args.seconds;
+        let translator = Translator::new(args.language);
         Self {
             args,
+            translator,
             ring,
             cursor: 0,
             presets: Presets::new(),
@@ -225,6 +251,8 @@ impl Child {
             song: None,
             drawn: Vec::new(),
             showing_keys: false,
+            help_until: None,
+            notice: None,
             song_shown: SongShown::OnChange,
             preset_on: false,
             fps_on: false,
@@ -418,6 +446,25 @@ impl ApplicationHandler<Control> for Child {
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, control: Control) {
+        if let Some(language) = control.language
+            && self.translator.language() != language
+        {
+            self.translator = Translator::new(language);
+            self.corner_written = [None; 3];
+            self.update_corners();
+            if self.showing_keys {
+                let remaining = self
+                    .help_until
+                    .and_then(|until| until.checked_duration_since(Instant::now()))
+                    .unwrap_or_default();
+                self.show_keys_for(remaining, false);
+            }
+            if let Some((key, until)) = self.notice
+                && let Some(remaining) = until.checked_duration_since(Instant::now())
+            {
+                self.render_note(key, remaining);
+            }
+        }
         if let Some(scale) = control.scale {
             self.scale = scale.clamp(1, 4);
         }
@@ -549,20 +596,20 @@ impl Child {
             Key::Character("h") | Key::Character("H") if plain => self.presets.next(true),
             Key::Character("l") | Key::Character("L") if plain => {
                 self.presets.locked = !self.presets.locked;
-                let note = if self.presets.locked {
-                    "Preset kept"
+                let key = if self.presets.locked {
+                    TextKey::MilkdropPresetKept
                 } else {
-                    "Preset free again"
+                    TextKey::MilkdropPresetFree
                 };
-                self.show_note(note.into());
+                self.show_note(key);
             }
             Key::Character("r") | Key::Character("R") if plain => {
-                let note = if self.presets.toggle_order() {
-                    "Random order"
+                let key = if self.presets.toggle_order() {
+                    TextKey::MilkdropRandomOrder
                 } else {
-                    "Folder order"
+                    TextKey::MilkdropFolderOrder
                 };
-                self.show_note(note.into());
+                self.show_note(key);
             }
             // Playback, in the app's own bindings.
             Key::Named(NamedKey::Space) if plain => command("play-pause"),
@@ -592,16 +639,22 @@ impl Child {
     /// Every key this window answers, in two columns over the picture.
     /// The list is the window's own bindings: what is here is what works.
     fn show_keys(&mut self) {
+        self.show_keys_for(Duration::from_secs(12), true);
+    }
+
+    fn show_keys_for(&mut self, duration: Duration, toggle: bool) {
+        let translator = self.translator;
         let Some(live) = &mut self.live else {
             return;
         };
         let Some(overlay) = &mut live.overlay else {
             return;
         };
-        if overlay.showing() && self.showing_keys {
+        if toggle && overlay.showing() && self.showing_keys {
             // The same key that opened it puts it away again.
             overlay.hide();
             self.showing_keys = false;
+            self.help_until = None;
             return;
         }
         let heading = |text: &str| Row::Heading(Span::new(text, 12.0).weight(700.0).tint(0.62));
@@ -612,51 +665,77 @@ impl Child {
         let rows = [
             Row::Line(Span::new("MilkDrop", 22.0).weight(700.0)),
             Row::Gap(10.0),
-            heading("PRESETS"),
+            heading(translator.text(TextKey::MilkdropHelpPresets)),
             Row::Gap(3.0),
-            keys("\u{2192}  or  N", "Next preset"),
-            keys("\u{2190}  or  P", "Previous preset"),
-            keys("H", "Next preset, cut on the beat"),
-            keys("L", "Keep this preset"),
-            keys("R", "Random or folder order"),
-            keys("Right-click", "Next preset"),
+            keys(
+                "\u{2192}  or  N",
+                translator.text(TextKey::MilkdropHelpNextPreset),
+            ),
+            keys(
+                "\u{2190}  or  P",
+                translator.text(TextKey::MilkdropHelpPreviousPreset),
+            ),
+            keys("H", translator.text(TextKey::MilkdropHelpBeatCut)),
+            keys("L", translator.text(TextKey::MilkdropHelpKeepPreset)),
+            keys("R", translator.text(TextKey::MilkdropHelpOrder)),
+            keys(
+                "Right-click",
+                translator.text(TextKey::MilkdropHelpRightClick),
+            ),
             Row::Gap(9.0),
-            heading("PLAYBACK"),
+            heading(translator.text(TextKey::MilkdropHelpPlayback)),
             Row::Gap(3.0),
-            keys("Space", "Play or pause"),
-            keys("Ctrl+\u{2190}  /  Ctrl+\u{2192}", "Previous or next song"),
-            keys("Ctrl+\u{2191}  /  Ctrl+\u{2193}", "Volume up or down"),
-            keys("M", "Mute or unmute"),
-            keys("B", "Like or unlike the playing song"),
-            keys("S", "Shuffle"),
+            keys("Space", translator.text(TextKey::MilkdropHelpPlayPause)),
+            keys(
+                "Ctrl+\u{2190}  /  Ctrl+\u{2192}",
+                translator.text(TextKey::MilkdropHelpPreviousNextSong),
+            ),
+            keys(
+                "Ctrl+\u{2191}  /  Ctrl+\u{2193}",
+                translator.text(TextKey::MilkdropHelpVolume),
+            ),
+            keys("M", translator.text(TextKey::MilkdropHelpMute)),
+            keys("B", translator.text(TextKey::MilkdropHelpLike)),
+            keys("S", translator.text(TextKey::MilkdropHelpShuffle)),
             Row::Gap(9.0),
-            heading("WINDOW"),
+            heading(translator.text(TextKey::MilkdropHelpWindow)),
             Row::Gap(3.0),
-            keys("F, Alt+Enter, double-click", "Full screen"),
-            keys("Esc", "Leave full screen, or close"),
-            keys("Drag", "Move it; drag a corner to resize"),
+            keys(
+                "F, Alt+Enter, double-click",
+                translator.text(TextKey::MilkdropHelpFullscreen),
+            ),
+            keys("Esc", translator.text(TextKey::MilkdropHelpLeaveFullscreen)),
+            keys("Drag", translator.text(TextKey::MilkdropHelpMoveResize)),
             Row::Gap(9.0),
-            heading("SHOW"),
+            heading(translator.text(TextKey::MilkdropHelpShow)),
             Row::Gap(3.0),
-            keys("?  or  F1", "These keys"),
-            keys("I", "Song title: on a change, always, off"),
-            keys("T", "This preset's name, on or off"),
-            keys("D", "FPS, on or off"),
+            keys("?  or  F1", translator.text(TextKey::MilkdropHelpTheseKeys)),
+            keys("I", translator.text(TextKey::MilkdropHelpSongTitle)),
+            keys("T", translator.text(TextKey::MilkdropHelpPresetName)),
+            keys("D", translator.text(TextKey::MilkdropHelpFps)),
         ];
         overlay.show(
             &live.gl,
             &rows,
             Place::Center,
             Backing::Box,
-            Duration::from_secs(12),
+            duration,
             window_size(&live.window),
         );
         self.showing_keys = true;
+        self.help_until = Some(Instant::now() + duration);
         live.window.request_redraw();
     }
 
     /// A line of its own, low in the picture: a short answer to a key.
-    fn show_note(&mut self, text: String) {
+    fn show_note(&mut self, key: TextKey) {
+        let duration = Duration::from_secs(3);
+        self.notice = Some((key, Instant::now() + duration));
+        self.render_note(key, duration);
+    }
+
+    fn render_note(&mut self, key: TextKey, duration: Duration) {
+        let text = self.translator.text(key);
         let Some(live) = &mut self.live else {
             return;
         };
@@ -668,7 +747,7 @@ impl Child {
             &[Row::Line(Span::new(text, 15.0).weight(600.0))],
             Place::BottomLeft,
             Backing::Shadow,
-            Duration::from_secs(3),
+            duration,
             window_size(&live.window),
         );
         self.showing_keys = false;
@@ -683,14 +762,14 @@ impl Child {
             SongShown::Always => SongShown::Off,
             SongShown::Off => SongShown::OnChange,
         };
-        let note = match self.song_shown {
-            SongShown::OnChange => "Song title: when it changes",
-            SongShown::Always => "Song title: always",
-            SongShown::Off => "Song title: off",
+        let key = match self.song_shown {
+            SongShown::OnChange => TextKey::MilkdropSongWhenChanged,
+            SongShown::Always => TextKey::MilkdropSongAlways,
+            SongShown::Off => TextKey::MilkdropSongOff,
         };
         self.corner_written[Status::Song.index()] = None;
         self.update_corners();
-        self.show_note(note.into());
+        self.show_note(key);
     }
 
     /// Toggles a persistent corner status.
@@ -721,14 +800,14 @@ impl Child {
                     .filter(|line| !line.is_empty())
                     .cloned()
                     .collect(),
-                None => vec!["Nothing playing".into()],
+                None => vec![self.translator.text(TextKey::MilkdropNothingPlaying).into()],
             },
             Status::Preset if self.preset_on => vec![
                 self.presets
                     .current()
                     .and_then(|path| path.file_stem())
                     .map(|stem| stem.to_string_lossy().to_string())
-                    .unwrap_or_else(|| "No preset".into()),
+                    .unwrap_or_else(|| self.translator.text(TextKey::MilkdropNoPreset).into()),
             ],
             _ => Vec::new(),
         }
@@ -1021,6 +1100,7 @@ mod tests {
                 fps: 30,
                 seconds: 30,
                 scale: 1,
+                language: LanguageChoice::English,
             },
             ring,
         )
@@ -1039,6 +1119,41 @@ mod tests {
         }
         child.fps = 0;
         assert!(child.frame_interval().is_none(), "zero is uncapped");
+    }
+
+    #[test]
+    fn language_protocol_is_backward_compatible() {
+        assert_eq!(parse_language("english"), Some(LanguageChoice::English));
+        assert_eq!(parse_language("spanish"), Some(LanguageChoice::Spanish));
+        assert_eq!(parse_language("other"), None);
+
+        let old: Control = serde_json::from_str(r#"{"fps":60}"#).unwrap();
+        assert_eq!(old.language, None);
+        let spanish: Control = serde_json::from_str(r#"{"language":"spanish"}"#).unwrap();
+        assert_eq!(spanish.language, Some(LanguageChoice::Spanish));
+    }
+
+    #[test]
+    fn language_changes_only_app_owned_corner_text() {
+        let mut child = headless_child();
+        child.translator = Translator::new(LanguageChoice::Spanish);
+        child.song_shown = SongShown::Always;
+        child.song = Some(vec!["Song Ω".into(), "Artist 日本".into()]);
+        assert_eq!(
+            child.corner_lines(Status::Song),
+            vec!["Song Ω", "Artist 日本"]
+        );
+
+        child.song = None;
+        assert_eq!(
+            child.corner_lines(Status::Song),
+            vec!["TODO(es) Nothing playing"]
+        );
+        child.preset_on = true;
+        assert_eq!(
+            child.corner_lines(Status::Preset),
+            vec!["TODO(es) No preset"]
+        );
     }
 
     /// Frame deadlines do not drift with rendering time.

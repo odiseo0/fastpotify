@@ -15,6 +15,9 @@ use std::time::Duration;
 use tray_icon::menu::{Menu, MenuEvent, MenuId, MenuItem, PredefinedMenuItem};
 use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
 
+use crate::i18n::Translator;
+use crate::settings::LanguageChoice;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TrayCommand {
     Show,
@@ -44,18 +47,34 @@ fn command_for(id: &MenuId) -> Option<TrayCommand> {
     }
 }
 
-fn play_pause_label(playing: bool) -> &'static str {
-    if playing { "Pause" } else { "Play" }
-}
-
-/// The item, and the menu entry whose label follows playback.
+/// The item and all app-owned menu entries.
 struct Item {
     _icon: TrayIcon,
+    show_hide: MenuItem,
     play_pause: MenuItem,
+    next: MenuItem,
+    previous: MenuItem,
+    quit: MenuItem,
+}
+
+impl Item {
+    fn update(&self, language: LanguageChoice, playing: bool) {
+        let labels = crate::tray_labels::labels(Translator::new(language), playing);
+        self.show_hide.set_text(labels.show_hide);
+        self.play_pause.set_text(labels.play_pause);
+        self.next.set_text(labels.next);
+        self.previous.set_text(labels.previous);
+        self.quit.set_text(labels.quit);
+    }
 }
 
 /// Builds the item on the current thread and routes its events to `sender`.
-fn build(sender: Sender<TrayCommand>, wake: Wake) -> Result<Item, Box<dyn std::error::Error>> {
+fn build(
+    sender: Sender<TrayCommand>,
+    wake: Wake,
+    language: LanguageChoice,
+    playing: bool,
+) -> Result<Item, Box<dyn std::error::Error>> {
     let size = 32u32;
     #[cfg(not(target_os = "macos"))]
     let icon = Icon::from_rgba(crate::util::app_icon_rgba(size as usize), size, size)?;
@@ -64,15 +83,20 @@ fn build(sender: Sender<TrayCommand>, wake: Wake) -> Result<Item, Box<dyn std::e
     #[cfg(target_os = "macos")]
     let icon = Icon::from_rgba(crate::util::tray_template_rgba(size as usize), size, size)?;
     let menu = Menu::new();
-    let play_pause = MenuItem::with_id(PLAY_PAUSE, play_pause_label(false), true, None);
+    let labels = crate::tray_labels::labels(Translator::new(language), playing);
+    let show_hide = MenuItem::with_id(SHOW, labels.show_hide, true, None);
+    let play_pause = MenuItem::with_id(PLAY_PAUSE, labels.play_pause, true, None);
+    let next = MenuItem::with_id(NEXT, labels.next, true, None);
+    let previous = MenuItem::with_id(PREVIOUS, labels.previous, true, None);
+    let quit = MenuItem::with_id(QUIT, labels.quit, true, None);
     menu.append_items(&[
-        &MenuItem::with_id(SHOW, "Show or hide Fastpotify", true, None),
+        &show_hide,
         &PredefinedMenuItem::separator(),
         &play_pause,
-        &MenuItem::with_id(NEXT, "Next", true, None),
-        &MenuItem::with_id(PREVIOUS, "Previous", true, None),
+        &next,
+        &previous,
         &PredefinedMenuItem::separator(),
-        &MenuItem::with_id(QUIT, "Quit", true, None),
+        &quit,
     ])?;
     let builder = TrayIconBuilder::new()
         .with_icon(icon)
@@ -109,7 +133,11 @@ fn build(sender: Sender<TrayCommand>, wake: Wake) -> Result<Item, Box<dyn std::e
 
     Ok(Item {
         _icon: icon,
+        show_hide,
         play_pause,
+        next,
+        previous,
+        quit,
     })
 }
 
@@ -121,18 +149,38 @@ mod host {
         DispatchMessageW, GetMessageW, MSG, PostThreadMessageW, TranslateMessage, WM_APP,
     };
 
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub enum Update {
+        Playing(bool),
+        Language(LanguageChoice),
+    }
+
+    fn apply_updates(
+        updates: &Receiver<Update>,
+        language: &mut LanguageChoice,
+        playing: &mut bool,
+    ) {
+        while let Ok(update) = updates.try_recv() {
+            match update {
+                Update::Playing(value) => *playing = value,
+                Update::Language(value) => *language = value,
+            }
+        }
+    }
+
     /// Runs the item on its own thread. Answers with the thread's id once
     /// the item exists, or with why it could not be made.
     pub fn start(
         sender: Sender<TrayCommand>,
         wake: Wake,
-        playing: Receiver<bool>,
+        updates: Receiver<Update>,
+        language: LanguageChoice,
     ) -> Result<u32, String> {
         let (ready_tx, ready_rx) = std::sync::mpsc::channel();
         let spawned = std::thread::Builder::new()
             .name("fastpotify-tray".to_owned())
             .spawn(move || {
-                let item = match build(sender, wake) {
+                let item = match build(sender, wake, language, false) {
                     Ok(item) => item,
                     Err(error) => {
                         let _ = ready_tx.send(Err(error.to_string()));
@@ -141,11 +189,12 @@ mod host {
                 };
                 let _ = ready_tx.send(Ok(unsafe { GetCurrentThreadId() }));
                 let mut message: MSG = unsafe { std::mem::zeroed() };
+                let mut playing = false;
+                let mut language = language;
                 while unsafe { GetMessageW(&mut message, std::ptr::null_mut(), 0, 0) } > 0 {
                     if message.message == WM_APP {
-                        while let Ok(playing) = playing.try_recv() {
-                            item.play_pause.set_text(play_pause_label(playing));
-                        }
+                        apply_updates(&updates, &mut language, &mut playing);
+                        item.update(language, playing);
                         continue;
                     }
                     unsafe {
@@ -168,27 +217,56 @@ mod host {
             PostThreadMessageW(thread_id, WM_APP, 0, 0);
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn update_channel_keeps_language_and_playback_independent() {
+            let (sender, updates) = std::sync::mpsc::channel();
+            sender
+                .send(Update::Language(LanguageChoice::Spanish))
+                .unwrap();
+            sender.send(Update::Playing(true)).unwrap();
+            let mut language = LanguageChoice::English;
+            let mut playing = false;
+            apply_updates(&updates, &mut language, &mut playing);
+            assert_eq!(language, LanguageChoice::Spanish);
+            assert!(playing);
+
+            sender.send(Update::Playing(false)).unwrap();
+            apply_updates(&updates, &mut language, &mut playing);
+            assert_eq!(language, LanguageChoice::Spanish);
+            assert!(!playing);
+        }
+    }
 }
 
 #[cfg(windows)]
 pub struct TrayService {
     commands: Receiver<TrayCommand>,
     playing: bool,
-    playing_tx: Sender<bool>,
+    language: LanguageChoice,
+    updates: Sender<host::Update>,
     thread_id: u32,
 }
 
 #[cfg(windows)]
 impl TrayService {
     /// Registers the tray item. `None` when it cannot be made.
-    pub fn spawn(wake: impl Fn() + Send + Sync + 'static) -> Option<Self> {
+    pub fn spawn(
+        language: LanguageChoice,
+        wake: impl Fn() + Send + Sync + 'static,
+    ) -> Option<Self> {
         let (sender, commands) = std::sync::mpsc::channel();
-        let (playing_tx, playing_rx) = std::sync::mpsc::channel();
-        match host::start(sender, Arc::new(wake), playing_rx) {
+        let (updates, update_rx) = std::sync::mpsc::channel();
+        match host::start(sender, Arc::new(wake), update_rx, language) {
             Ok(thread_id) => Some(Self {
                 commands,
                 playing: false,
-                playing_tx,
+                language,
+                updates,
                 thread_id,
             }),
             Err(error) => {
@@ -206,7 +284,16 @@ impl TrayService {
     pub fn set_playing(&mut self, playing: bool) {
         if self.playing != playing {
             self.playing = playing;
-            if self.playing_tx.send(playing).is_ok() {
+            if self.updates.send(host::Update::Playing(playing)).is_ok() {
+                host::poke(self.thread_id);
+            }
+        }
+    }
+
+    pub fn set_language(&mut self, language: LanguageChoice) {
+        if self.language != language {
+            self.language = language;
+            if self.updates.send(host::Update::Language(language)).is_ok() {
                 host::poke(self.thread_id);
             }
         }
@@ -308,16 +395,20 @@ mod host {
     }
 
     /// Creates the item, once, on the main thread.
-    pub fn create(sender: Sender<TrayCommand>, wake: Wake, playing: bool) {
+    pub fn create(
+        sender: Sender<TrayCommand>,
+        wake: Wake,
+        language: LanguageChoice,
+        playing: bool,
+    ) {
         let Some(mtm) = MainThreadMarker::new() else {
             log::warn!("the status item can only be made on the main thread");
             return;
         };
         REOPEN.with(|slot| *slot.borrow_mut() = Some((sender.clone(), Arc::clone(&wake))));
         install_reopen_handler(&NSApplication::sharedApplication(mtm));
-        match build(sender, wake) {
+        match build(sender, wake, language, playing) {
             Ok(item) => {
-                item.play_pause.set_text(play_pause_label(playing));
                 ITEM.with(|slot| *slot.borrow_mut() = Some(item));
             }
             Err(error) => log::info!("no status item: {error}"),
@@ -328,10 +419,10 @@ mod host {
         ITEM.with(|slot| slot.borrow().is_some())
     }
 
-    pub fn set_playing(playing: bool) {
+    pub fn update(language: LanguageChoice, playing: bool) {
         ITEM.with(|slot| {
             if let Some(item) = slot.borrow().as_ref() {
-                item.play_pause.set_text(play_pause_label(playing));
+                item.update(language, playing);
             }
         });
     }
@@ -375,6 +466,7 @@ mod host {
 pub struct TrayService {
     commands: Receiver<TrayCommand>,
     playing: bool,
+    language: LanguageChoice,
     /// What the item needs, until the first window lets it be made.
     pending: Option<(Sender<TrayCommand>, Wake)>,
 }
@@ -383,11 +475,15 @@ pub struct TrayService {
 impl TrayService {
     /// Prepares the item. It is made with the first window, when AppKit's
     /// event loop is running, which it must be.
-    pub fn spawn(wake: impl Fn() + Send + Sync + 'static) -> Option<Self> {
+    pub fn spawn(
+        language: LanguageChoice,
+        wake: impl Fn() + Send + Sync + 'static,
+    ) -> Option<Self> {
         let (sender, commands) = std::sync::mpsc::channel();
         Some(Self {
             commands,
             playing: false,
+            language,
             pending: Some((sender, Arc::new(wake))),
         })
     }
@@ -400,7 +496,14 @@ impl TrayService {
     pub fn set_playing(&mut self, playing: bool) {
         if self.playing != playing {
             self.playing = playing;
-            host::set_playing(playing);
+            host::update(self.language, playing);
+        }
+    }
+
+    pub fn set_language(&mut self, language: LanguageChoice) {
+        if self.language != language {
+            self.language = language;
+            host::update(language, self.playing);
         }
     }
 
@@ -408,7 +511,7 @@ impl TrayService {
     /// application forward.
     pub fn attach(&mut self) {
         if let Some((sender, wake)) = self.pending.take() {
-            host::create(sender, wake, self.playing);
+            host::create(sender, wake, self.language, self.playing);
         }
         if host::exists() {
             host::activate();

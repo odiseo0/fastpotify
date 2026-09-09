@@ -464,6 +464,7 @@ impl App {
             dirs.clone(),
             engine_config,
             settings.web_client_id.clone(),
+            settings.language,
             waker.clone(),
         );
         let session = SessionState::load(&dirs.session_file());
@@ -2016,7 +2017,7 @@ impl App {
         if let Some(fetched) = fetched {
             match fetched {
                 Ok(count) => {
-                    self.toast(format!("Added {count} MilkDrop presets"));
+                    self.toast_message(Message::NoticeMilkdropPresetsAdded { count });
                     // Restart the child so it loads the new preset list.
                     #[cfg(feature = "milkdrop")]
                     if let Some(host) = self.milkdrop_host.as_mut()
@@ -2025,7 +2026,10 @@ impl App {
                         host.close();
                     }
                 }
-                Err(error) => self.toast_error(format!("Couldn't fetch presets: {error}")),
+                Err(error) => self.toast_error_message(Message::NoticeDetail {
+                    prefix: TextKey::NoticeFetchPresetsFailedPrefix,
+                    detail: error.to_string(),
+                }),
             }
         }
     }
@@ -2058,9 +2062,18 @@ impl App {
             let host = self.milkdrop_host.as_mut().expect("the host was just made");
             if open {
                 if !host.is_running() {
-                    host.open(&presets, size, pos, fullscreen, fps, seconds, scale);
+                    host.open(
+                        &presets,
+                        size,
+                        pos,
+                        fullscreen,
+                        fps,
+                        seconds,
+                        scale,
+                        self.translator.language(),
+                    );
                 }
-                host.update(fps, seconds, scale);
+                host.update(fps, seconds, scale, self.translator.language());
                 host.song(song);
             } else if host.is_running() {
                 host.close();
@@ -2143,7 +2156,9 @@ impl App {
                 self.winamp
                     .wear(Some(loaded.name.clone()), std::sync::Arc::new(skin));
                 if loaded.installed {
-                    self.toast(format!("Added {} skin", crate::winamp::label(&loaded.name)));
+                    self.toast_message(Message::NoticeSkinAdded {
+                        name: crate::winamp::label(&loaded.name).to_string(),
+                    });
                     self.winamp.list_choices(&self.dirs.skins_dir());
                     self.settings.skin = Some(loaded.name);
                     self.settings_dirty = true;
@@ -5825,6 +5840,10 @@ impl App {
                     if let Some(tray) = &mut self.tray {
                         tray.set_language(self.settings.language);
                     }
+                    self.backend
+                        .send(Command::SetLanguage(self.settings.language));
+                    #[cfg(target_os = "macos")]
+                    crate::mac_menu::set_language(self.settings.language);
                 }
                 self.settings_dirty = true;
                 if language_changed {
@@ -6040,7 +6059,7 @@ impl App {
                         && self.winamp.presets.downloading().is_none()
                     {
                         self.winamp.presets.download_missing(folder, ctx.clone());
-                        self.toast("Downloading MilkDrop preset packs");
+                        self.toast_text(TextKey::NoticeDownloadingMilkdropPacks);
                     }
                 }
             }
@@ -6069,7 +6088,9 @@ impl App {
                     self.winamp
                         .presets
                         .download(pack, self.dirs.milkdrop_dir(), ctx.clone());
-                    self.toast(format!("Downloading {} presets", pack.name));
+                    self.toast_message(Message::NoticeDownloadingPresetPack {
+                        name: pack.name.to_string(),
+                    });
                 }
             }
             Action::Quit => {

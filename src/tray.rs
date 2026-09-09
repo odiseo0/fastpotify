@@ -12,6 +12,9 @@ use std::time::Duration;
 
 use ksni::blocking::TrayMethods;
 
+use crate::i18n::Translator;
+use crate::settings::LanguageChoice;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TrayCommand {
     Show,
@@ -26,6 +29,7 @@ struct FastTray {
     commands: Sender<TrayCommand>,
     wake: Arc<dyn Fn() + Send + Sync>,
     playing: bool,
+    language: LanguageChoice,
 }
 
 impl FastTray {
@@ -67,39 +71,36 @@ impl ksni::Tray for FastTray {
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
         use ksni::menu::*;
+        let labels = crate::tray_labels::labels(Translator::new(self.language), self.playing);
         vec![
             StandardItem {
-                label: "Show or hide Fastpotify".into(),
+                label: labels.show_hide.into(),
                 activate: Box::new(|tray: &mut Self| tray.send(TrayCommand::ShowHide)),
                 ..Default::default()
             }
             .into(),
             MenuItem::Separator,
             StandardItem {
-                label: if self.playing {
-                    "Pause".into()
-                } else {
-                    "Play".into()
-                },
+                label: labels.play_pause.into(),
                 activate: Box::new(|tray: &mut Self| tray.send(TrayCommand::PlayPause)),
                 ..Default::default()
             }
             .into(),
             StandardItem {
-                label: "Next".into(),
+                label: labels.next.into(),
                 activate: Box::new(|tray: &mut Self| tray.send(TrayCommand::Next)),
                 ..Default::default()
             }
             .into(),
             StandardItem {
-                label: "Previous".into(),
+                label: labels.previous.into(),
                 activate: Box::new(|tray: &mut Self| tray.send(TrayCommand::Previous)),
                 ..Default::default()
             }
             .into(),
             MenuItem::Separator,
             StandardItem {
-                label: "Quit".into(),
+                label: labels.quit.into(),
                 activate: Box::new(|tray: &mut Self| tray.send(TrayCommand::Quit)),
                 ..Default::default()
             }
@@ -112,22 +113,28 @@ pub struct TrayService {
     handle: ksni::blocking::Handle<FastTray>,
     commands: Receiver<TrayCommand>,
     playing: bool,
+    language: LanguageChoice,
 }
 
 impl TrayService {
     /// Registers the tray item. `None` when no status-notifier host exists.
-    pub fn spawn(wake: impl Fn() + Send + Sync + 'static) -> Option<Self> {
+    pub fn spawn(
+        language: LanguageChoice,
+        wake: impl Fn() + Send + Sync + 'static,
+    ) -> Option<Self> {
         let (sender, commands) = std::sync::mpsc::channel();
         let tray = FastTray {
             commands: sender,
             wake: Arc::new(wake),
             playing: false,
+            language,
         };
         match tray.spawn() {
             Ok(handle) => Some(Self {
                 handle,
                 commands,
                 playing: false,
+                language,
             }),
             Err(error) => {
                 log::info!("no system tray available: {error}");
@@ -145,6 +152,14 @@ impl TrayService {
         if self.playing != playing {
             self.playing = playing;
             self.handle.update(|tray| tray.playing = playing);
+        }
+    }
+
+    /// Changes all app-owned menu labels without registering another item.
+    pub fn set_language(&mut self, language: LanguageChoice) {
+        if self.language != language {
+            self.language = language;
+            self.handle.update(|tray| tray.language = language);
         }
     }
 

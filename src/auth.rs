@@ -26,6 +26,9 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
 use tokio::sync::watch;
 
+use crate::i18n::{TextKey, Translator};
+use crate::settings::LanguageChoice;
+
 /// Spotify's own desktop client identity, the one librespot streams with.
 pub const PLAYBACK_CLIENT_ID: &str = "65b708073fc0480ea92a077233ca87bd";
 pub const PLAYBACK_REDIRECT_PORT: u16 = 8898;
@@ -121,6 +124,7 @@ pub struct Flow {
     pub verifier: String,
     pub state: String,
     pub url: String,
+    pub language: LanguageChoice,
 }
 
 fn random_token(bytes: usize) -> String {
@@ -130,6 +134,10 @@ fn random_token(bytes: usize) -> String {
 }
 
 pub fn begin(grant: Grant) -> Flow {
+    begin_with_language(grant, LanguageChoice::English)
+}
+
+pub fn begin_with_language(grant: Grant, language: LanguageChoice) -> Flow {
     let verifier = random_token(48);
     let challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()));
     let state = random_token(18);
@@ -143,6 +151,7 @@ pub fn begin(grant: Grant) -> Flow {
         verifier,
         state,
         url,
+        language,
     }
 }
 
@@ -164,7 +173,16 @@ pub struct TokenResponse {
 pub async fn wait_for_code(
     port: u16,
     expected_state: &str,
+    cancel: watch::Receiver<bool>,
+) -> Result<String> {
+    wait_for_code_with_language(port, expected_state, cancel, LanguageChoice::English).await
+}
+
+pub async fn wait_for_code_with_language(
+    port: u16,
+    expected_state: &str,
     mut cancel: watch::Receiver<bool>,
+    language: LanguageChoice,
 ) -> Result<String> {
     let address: SocketAddr = ([127, 0, 0, 1], port).into();
     let listener = TcpListener::bind(address)
@@ -190,8 +208,11 @@ pub async fn wait_for_code(
         }
         let outcome = parse_request_line(&request_line, expected_state);
         let (status, body) = match &outcome {
-            Ok(_) => ("200 OK", success_page()),
-            Err(error) => ("400 Bad Request", failure_page(&error.to_string())),
+            Ok(_) => ("200 OK", success_page_with_language(language)),
+            Err(error) => (
+                "400 Bad Request",
+                failure_page_with_language(&error.to_string(), language),
+            ),
         };
         let response = format!(
             "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}",
@@ -439,9 +460,13 @@ fn now_secs() -> u64 {
         .unwrap_or(0)
 }
 
-fn page(title: &str, heading: &str, body: &str, accent: &str) -> String {
+fn page(language: LanguageChoice, title: &str, heading: &str, body: &str, accent: &str) -> String {
+    let lang = match language {
+        LanguageChoice::English => "en",
+        LanguageChoice::Spanish => "es",
+    };
     format!(
-        "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{title}</title>\
+        "<!doctype html><html lang=\"{lang}\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{title}</title>\
 <style>:root{{color-scheme:dark}}body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f1114;color:#e8eaed;font-family:Inter,system-ui,sans-serif}}\
 main{{max-width:28rem;padding:2.5rem;border-radius:1.25rem;background:#181b20;box-shadow:0 20px 60px rgba(0,0,0,.5);text-align:center}}\
 .mark{{width:64px;height:64px;border-radius:50%;background:{accent};display:grid;place-items:center;margin:0 auto 1.25rem}}\
@@ -451,20 +476,32 @@ main{{max-width:28rem;padding:2.5rem;border-radius:1.25rem;background:#181b20;bo
     )
 }
 
-fn success_page() -> String {
+pub fn success_page() -> String {
+    success_page_with_language(LanguageChoice::English)
+}
+
+fn success_page_with_language(language: LanguageChoice) -> String {
+    let translator = Translator::new(language);
     page(
-        "Signed in to Fastpotify",
-        "You're signed in",
-        "You can close this tab and go back to Fastpotify.",
+        language,
+        translator.text(TextKey::AuthSuccessTitle),
+        translator.text(TextKey::AuthSuccessHeading),
+        translator.text(TextKey::AuthSuccessBody),
         "#1ed760",
     )
 }
 
-fn failure_page(reason: &str) -> String {
+pub fn failure_page(reason: &str) -> String {
+    failure_page_with_language(reason, LanguageChoice::English)
+}
+
+fn failure_page_with_language(reason: &str, language: LanguageChoice) -> String {
+    let translator = Translator::new(language);
     page(
-        "Sign-in failed",
-        "Sign-in didn't complete",
-        &format!("{reason}. Return to Fastpotify and try again."),
+        language,
+        translator.text(TextKey::AuthFailureTitle),
+        translator.text(TextKey::AuthFailureHeading),
+        &format!("{reason}. {}", translator.text(TextKey::AuthFailureReturn)),
         "#f5717f",
     )
 }
@@ -509,6 +546,26 @@ mod tests {
         assert!(
             parse_request_line("GET /login?error=access_denied&state=s1 HTTP/1.1", "s1").is_err()
         );
+    }
+
+    #[test]
+    fn browser_result_pages_follow_the_flow_language() {
+        let english = success_page_with_language(LanguageChoice::English);
+        assert!(english.contains("lang=\"en\""));
+        assert!(english.contains("Signed in to Fastpotify"));
+
+        let spanish = success_page_with_language(LanguageChoice::Spanish);
+        assert!(spanish.contains("lang=\"es\""));
+        assert!(spanish.contains("TODO(es) Signed in to Fastpotify"));
+
+        let detail = "external_detail_123";
+        let failure = failure_page_with_language(detail, LanguageChoice::Spanish);
+        assert!(failure.contains("lang=\"es\""));
+        assert!(failure.contains(detail));
+        assert!(failure.contains("TODO(es) Return to Fastpotify and try again."));
+
+        let flow = begin_with_language(Grant::shared_web_api(), LanguageChoice::Spanish);
+        assert_eq!(flow.language, LanguageChoice::Spanish);
     }
 
     #[test]

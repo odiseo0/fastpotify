@@ -424,6 +424,8 @@ pub enum ApiResponse {
 }
 
 pub enum Command {
+    /// Use this language for browser flows started after this command.
+    SetLanguage(crate::settings::LanguageChoice),
     /// Start (or restart) the Web API sign-in in the browser.
     SignIn,
     CancelSignIn,
@@ -619,6 +621,7 @@ impl Backend {
         dirs: AppDirs,
         engine_config: EngineConfig,
         web_client_id: Option<String>,
+        language: crate::settings::LanguageChoice,
         waker: Waker,
     ) -> Self {
         let (command_tx, command_rx) = mpsc::unbounded_channel();
@@ -648,6 +651,7 @@ impl Backend {
                         dirs,
                         engine_config,
                         web_client_id,
+                        language,
                         http,
                         worker_art,
                         worker_activity,
@@ -689,7 +693,12 @@ impl Backend {
     }
 
     pub fn send(&self, command: Command) {
-        if self.offline && !matches!(command, Command::Accent { .. } | Command::Shutdown) {
+        if self.offline
+            && !matches!(
+                command,
+                Command::Accent { .. } | Command::SetLanguage(_) | Command::Shutdown
+            )
+        {
             return;
         }
         let _ = self.commands.send(command);
@@ -767,6 +776,7 @@ struct Worker {
     dirs: AppDirs,
     engine_config: EngineConfig,
     web_client_id: Option<String>,
+    language: crate::settings::LanguageChoice,
     http: reqwest::Client,
     api: Arc<ApiGateway>,
     background_api: Arc<tokio::sync::Semaphore>,
@@ -798,6 +808,7 @@ impl Worker {
         dirs: AppDirs,
         engine_config: EngineConfig,
         web_client_id: Option<String>,
+        language: crate::settings::LanguageChoice,
         http: reqwest::Client,
         art: ArtLoader,
         activity: Arc<NetActivity>,
@@ -809,6 +820,7 @@ impl Worker {
             dirs,
             engine_config,
             web_client_id,
+            language,
             api: Arc::new(ApiGateway::new(http.clone(), activity)),
             background_api: Arc::new(tokio::sync::Semaphore::new(4)),
             http,
@@ -839,6 +851,7 @@ impl Worker {
         while let Some(command) = commands.recv().await {
             match command {
                 Command::Shutdown => break,
+                Command::SetLanguage(language) => self.language = language,
                 Command::SignIn => self.sign_in(),
                 Command::CancelSignIn => {
                     if let Some(cancel) = self.cancel_signin.take() {
@@ -1119,7 +1132,7 @@ impl Worker {
                 }
             }
         };
-        let flow = crate::auth::begin(grant.clone());
+        let flow = crate::auth::begin_with_language(grant.clone(), self.language);
         let (cancel_tx, cancel_rx) = watch::channel(false);
         self.cancel_signin = Some(cancel_tx);
         self.authorizing_source = Some(source);
@@ -1141,8 +1154,13 @@ impl Worker {
         let commands = self.commands.clone();
         tokio::spawn(async move {
             let result = async {
-                let code =
-                    crate::auth::wait_for_code(grant.redirect_port, &flow.state, cancel_rx).await?;
+                let code = crate::auth::wait_for_code_with_language(
+                    grant.redirect_port,
+                    &flow.state,
+                    cancel_rx,
+                    flow.language,
+                )
+                .await?;
                 let response =
                     crate::auth::exchange_code(&http, &grant, &code, &flow.verifier).await?;
                 crate::auth::StoredToken::from_response(&grant.client_id, response, None)
@@ -1299,7 +1317,7 @@ impl Worker {
             return;
         }
         let grant = crate::auth::Grant::playback();
-        let flow = crate::auth::begin(grant.clone());
+        let flow = crate::auth::begin_with_language(grant.clone(), self.language);
         let (cancel_tx, cancel_rx) = watch::channel(false);
         self.cancel_signin = Some(cancel_tx);
         self.emit(Event::Playback(LocalPlayback::Authorizing));
@@ -1315,8 +1333,13 @@ impl Worker {
         let commands = self.commands.clone();
         tokio::spawn(async move {
             let result = async {
-                let code =
-                    crate::auth::wait_for_code(grant.redirect_port, &flow.state, cancel_rx).await?;
+                let code = crate::auth::wait_for_code_with_language(
+                    grant.redirect_port,
+                    &flow.state,
+                    cancel_rx,
+                    flow.language,
+                )
+                .await?;
                 crate::auth::exchange_code(&http, &grant, &code, &flow.verifier).await
             }
             .await;

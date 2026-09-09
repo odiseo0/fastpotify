@@ -1,5 +1,54 @@
 //! Native macOS application menu bar (File, Edit, View, Playback, Window, Help).
 
+use crate::settings::LanguageChoice;
+
+/// All Fastpotify-owned application menu titles, in menu order.
+pub fn titles(language: LanguageChoice) -> Vec<&'static str> {
+    use crate::i18n::TextKey::*;
+    let translator = crate::i18n::Translator::new(language);
+    [
+        MacMenuCheckUpdates,
+        MacMenuSettings,
+        MacMenuFile,
+        MacMenuCloseWindow,
+        MacMenuEdit,
+        MacMenuCut,
+        MacMenuCopy,
+        MacMenuPaste,
+        MacMenuSelectAll,
+        MacMenuPlayback,
+        MacMenuPlayPause,
+        MacMenuNextTrack,
+        MacMenuPreviousTrack,
+        MacMenuSeekForward,
+        MacMenuSeekBackward,
+        MacMenuShuffle,
+        MacMenuRepeat,
+        MacMenuIncreaseVolume,
+        MacMenuDecreaseVolume,
+        MacMenuMute,
+        MacMenuView,
+        MacMenuBack,
+        MacMenuForward,
+        MacMenuHome,
+        MacMenuSearch,
+        MacMenuLikedSongs,
+        MacMenuToggleSidebar,
+        MacMenuQueue,
+        MacMenuToggleFullscreen,
+        MacMenuWindow,
+        MacMenuMinimize,
+        MacMenuZoom,
+        MacMenuBringAllToFront,
+        MacMenuHelp,
+        MacMenuKeyboardShortcuts,
+        MacMenuGithub,
+    ]
+    .into_iter()
+    .map(|key| translator.text(key))
+    .collect()
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MenuCommand {
     PlayPause,
@@ -30,7 +79,10 @@ pub enum MenuCommand {
 }
 
 #[cfg(not(target_os = "macos"))]
-pub fn init() {}
+pub fn init(_language: LanguageChoice) {}
+
+#[cfg(not(target_os = "macos"))]
+pub fn set_language(_language: LanguageChoice) {}
 
 #[cfg(not(target_os = "macos"))]
 pub fn set_waker(_wake: impl Fn() + Send + Sync + 'static) {}
@@ -38,6 +90,23 @@ pub fn set_waker(_wake: impl Fn() + Send + Sync + 'static) {}
 #[cfg(not(target_os = "macos"))]
 pub fn drain_commands() -> Vec<MenuCommand> {
     Vec::new()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::titles;
+    use crate::settings::LanguageChoice;
+
+    #[test]
+    fn every_application_menu_title_follows_language() {
+        let english = titles(LanguageChoice::English);
+        let spanish = titles(LanguageChoice::Spanish);
+        assert_eq!(english.len(), 36);
+        assert_eq!(spanish.len(), english.len());
+        assert!(english.contains(&"Playback"));
+        assert!(english.contains(&"Fastpotify on GitHub"));
+        assert!(spanish.iter().all(|title| !title.is_empty()));
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -50,12 +119,29 @@ mod mac_impl {
     use objc2::{MainThreadOnly, define_class, sel};
     use objc2_app_kit::{NSApplication, NSEventModifierFlags, NSMenu, NSMenuItem};
     use objc2_foundation::{MainThreadMarker, NSObject, NSString, ns_string};
+    use std::cell::{Cell, RefCell};
     use std::sync::Mutex;
 
-    use super::MenuCommand;
+    use super::{LanguageChoice, MenuCommand};
+    use crate::i18n::{TextKey, Translator};
 
     static COMMANDS: Mutex<Vec<MenuCommand>> = Mutex::new(Vec::new());
     static WAKER: Mutex<Option<Box<dyn Fn() + Send + Sync>>> = Mutex::new(None);
+
+    thread_local! {
+        static LANGUAGE: Cell<LanguageChoice> = const { Cell::new(LanguageChoice::English) };
+        static ITEMS: RefCell<Vec<(Retained<NSMenuItem>, TextKey)>> = const { RefCell::new(Vec::new()) };
+    }
+
+    pub fn set_language(language: LanguageChoice) {
+        LANGUAGE.with(|current| current.set(language));
+        let translator = Translator::new(language);
+        ITEMS.with(|items| {
+            for (item, key) in items.borrow().iter() {
+                item.setTitle(&NSString::from_str(translator.text(*key)));
+            }
+        });
+    }
 
     pub fn set_waker(wake: impl Fn() + Send + Sync + 'static) {
         if let Ok(mut w) = WAKER.lock() {
@@ -223,14 +309,16 @@ mod mac_impl {
 
     fn create_item(
         mtm: MainThreadMarker,
-        title: &NSString,
+        title_key: TextKey,
         action: Option<Sel>,
         key: &NSString,
         masks: Option<NSEventModifierFlags>,
         target: Option<&NSObject>,
     ) -> Retained<NSMenuItem> {
+        let title = LANGUAGE
+            .with(|language| NSString::from_str(Translator::new(language.get()).text(title_key)));
         let item = unsafe {
-            NSMenuItem::initWithTitle_action_keyEquivalent(mtm.alloc(), title, action, key)
+            NSMenuItem::initWithTitle_action_keyEquivalent(mtm.alloc(), &title, action, key)
         };
         if let Some(masks) = masks {
             item.setKeyEquivalentModifierMask(masks);
@@ -238,23 +326,33 @@ mod mac_impl {
         if let Some(target) = target {
             unsafe { item.setTarget(Some(target)) };
         }
+        ITEMS.with(|items| items.borrow_mut().push((item.clone(), title_key)));
         item
     }
 
     fn create_menu(
         mtm: MainThreadMarker,
-        title: &NSString,
+        title_key: TextKey,
     ) -> (Retained<NSMenuItem>, Retained<NSMenu>) {
+        let title = LANGUAGE
+            .with(|language| NSString::from_str(Translator::new(language.get()).text(title_key)));
         let container_item = unsafe {
-            NSMenuItem::initWithTitle_action_keyEquivalent(mtm.alloc(), title, None, ns_string!(""))
+            NSMenuItem::initWithTitle_action_keyEquivalent(
+                mtm.alloc(),
+                &title,
+                None,
+                ns_string!(""),
+            )
         };
-        let menu = NSMenu::initWithTitle(mtm.alloc(), title);
+        let menu = NSMenu::initWithTitle(mtm.alloc(), &title);
         menu.setAutoenablesItems(false);
         container_item.setSubmenu(Some(&menu));
+        ITEMS.with(|items| items.borrow_mut().push((container_item.clone(), title_key)));
         (container_item, menu)
     }
 
-    pub fn init() {
+    pub fn init(language: LanguageChoice) {
+        set_language(language);
         let Some(mtm) = MainThreadMarker::new() else {
             return;
         };
@@ -279,7 +377,7 @@ mod mac_impl {
         {
             let update_item = create_item(
                 mtm,
-                ns_string!("Check for Updates…"),
+                TextKey::MacMenuCheckUpdates,
                 Some(sel!(checkForUpdates:)),
                 ns_string!(""),
                 None,
@@ -287,7 +385,7 @@ mod mac_impl {
             );
             let settings_item = create_item(
                 mtm,
-                ns_string!("Settings…"),
+                TextKey::MacMenuSettings,
                 Some(sel!(openSettings:)),
                 ns_string!(","),
                 None,
@@ -300,10 +398,10 @@ mod mac_impl {
         }
 
         // 2. File menu
-        let (file_item, file_menu) = create_menu(mtm, ns_string!("File"));
+        let (file_item, file_menu) = create_menu(mtm, TextKey::MacMenuFile);
         file_menu.addItem(&create_item(
             mtm,
-            ns_string!("Close Window"),
+            TextKey::MacMenuCloseWindow,
             Some(sel!(performClose:)),
             ns_string!("w"),
             None,
@@ -314,10 +412,10 @@ mod mac_impl {
         // 3. Edit menu. No Undo and Redo: egui's text fields handle Cmd+Z
         // themselves, and a menu item holding that chord would take it
         // from them.
-        let (edit_item, edit_menu) = create_menu(mtm, ns_string!("Edit"));
+        let (edit_item, edit_menu) = create_menu(mtm, TextKey::MacMenuEdit);
         edit_menu.addItem(&create_item(
             mtm,
-            ns_string!("Cut"),
+            TextKey::MacMenuCut,
             Some(sel!(editCut:)),
             ns_string!("x"),
             None,
@@ -325,7 +423,7 @@ mod mac_impl {
         ));
         edit_menu.addItem(&create_item(
             mtm,
-            ns_string!("Copy"),
+            TextKey::MacMenuCopy,
             Some(sel!(editCopy:)),
             ns_string!("c"),
             None,
@@ -333,7 +431,7 @@ mod mac_impl {
         ));
         edit_menu.addItem(&create_item(
             mtm,
-            ns_string!("Paste"),
+            TextKey::MacMenuPaste,
             Some(sel!(editPaste:)),
             ns_string!("v"),
             None,
@@ -341,7 +439,7 @@ mod mac_impl {
         ));
         edit_menu.addItem(&create_item(
             mtm,
-            ns_string!("Select All"),
+            TextKey::MacMenuSelectAll,
             Some(sel!(editSelectAll:)),
             ns_string!("a"),
             None,
@@ -350,10 +448,10 @@ mod mac_impl {
         menubar.addItem(&edit_item);
 
         // 4. Playback menu
-        let (playback_item, playback_menu) = create_menu(mtm, ns_string!("Playback"));
+        let (playback_item, playback_menu) = create_menu(mtm, TextKey::MacMenuPlayback);
         playback_menu.addItem(&create_item(
             mtm,
-            ns_string!("Play / Pause"),
+            TextKey::MacMenuPlayPause,
             Some(sel!(playPause:)),
             ns_string!(""),
             None,
@@ -361,7 +459,7 @@ mod mac_impl {
         ));
         playback_menu.addItem(&create_item(
             mtm,
-            ns_string!("Next Track"),
+            TextKey::MacMenuNextTrack,
             Some(sel!(nextTrack:)),
             &NSString::from_str("\u{F703}"), // Right arrow
             Some(NSEventModifierFlags::Command),
@@ -369,7 +467,7 @@ mod mac_impl {
         ));
         playback_menu.addItem(&create_item(
             mtm,
-            ns_string!("Previous Track"),
+            TextKey::MacMenuPreviousTrack,
             Some(sel!(previousTrack:)),
             &NSString::from_str("\u{F702}"), // Left arrow
             Some(NSEventModifierFlags::Command),
@@ -382,7 +480,7 @@ mod mac_impl {
         // handles the same chord itself, and only when nothing has focus.
         playback_menu.addItem(&create_item(
             mtm,
-            ns_string!("Seek Forward (10s)"),
+            TextKey::MacMenuSeekForward,
             Some(sel!(seekForward:)),
             ns_string!(""),
             None,
@@ -390,7 +488,7 @@ mod mac_impl {
         ));
         playback_menu.addItem(&create_item(
             mtm,
-            ns_string!("Seek Backward (10s)"),
+            TextKey::MacMenuSeekBackward,
             Some(sel!(seekBackward:)),
             ns_string!(""),
             None,
@@ -399,7 +497,7 @@ mod mac_impl {
         playback_menu.addItem(&NSMenuItem::separatorItem(mtm));
         playback_menu.addItem(&create_item(
             mtm,
-            ns_string!("Shuffle"),
+            TextKey::MacMenuShuffle,
             Some(sel!(toggleShuffle:)),
             ns_string!(""),
             None,
@@ -407,7 +505,7 @@ mod mac_impl {
         ));
         playback_menu.addItem(&create_item(
             mtm,
-            ns_string!("Repeat"),
+            TextKey::MacMenuRepeat,
             Some(sel!(cycleRepeat:)),
             ns_string!(""),
             None,
@@ -416,7 +514,7 @@ mod mac_impl {
         playback_menu.addItem(&NSMenuItem::separatorItem(mtm));
         playback_menu.addItem(&create_item(
             mtm,
-            ns_string!("Increase Volume"),
+            TextKey::MacMenuIncreaseVolume,
             Some(sel!(volumeUp:)),
             &NSString::from_str("\u{F700}"), // Up arrow
             Some(NSEventModifierFlags::Command),
@@ -424,7 +522,7 @@ mod mac_impl {
         ));
         playback_menu.addItem(&create_item(
             mtm,
-            ns_string!("Decrease Volume"),
+            TextKey::MacMenuDecreaseVolume,
             Some(sel!(volumeDown:)),
             &NSString::from_str("\u{F701}"), // Down arrow
             Some(NSEventModifierFlags::Command),
@@ -432,7 +530,7 @@ mod mac_impl {
         ));
         playback_menu.addItem(&create_item(
             mtm,
-            ns_string!("Mute"),
+            TextKey::MacMenuMute,
             Some(sel!(toggleMute:)),
             ns_string!(""),
             None,
@@ -441,10 +539,10 @@ mod mac_impl {
         menubar.addItem(&playback_item);
 
         // 5. View menu
-        let (view_item, view_menu) = create_menu(mtm, ns_string!("View"));
+        let (view_item, view_menu) = create_menu(mtm, TextKey::MacMenuView);
         view_menu.addItem(&create_item(
             mtm,
-            ns_string!("Back"),
+            TextKey::MacMenuBack,
             Some(sel!(goBack:)),
             ns_string!("["),
             Some(NSEventModifierFlags::Command),
@@ -452,7 +550,7 @@ mod mac_impl {
         ));
         view_menu.addItem(&create_item(
             mtm,
-            ns_string!("Forward"),
+            TextKey::MacMenuForward,
             Some(sel!(goForward:)),
             ns_string!("]"),
             Some(NSEventModifierFlags::Command),
@@ -461,7 +559,7 @@ mod mac_impl {
         view_menu.addItem(&NSMenuItem::separatorItem(mtm));
         view_menu.addItem(&create_item(
             mtm,
-            ns_string!("Home"),
+            TextKey::MacMenuHome,
             Some(sel!(openHome:)),
             ns_string!("H"),
             Some(NSEventModifierFlags::Command | NSEventModifierFlags::Shift),
@@ -469,7 +567,7 @@ mod mac_impl {
         ));
         view_menu.addItem(&create_item(
             mtm,
-            ns_string!("Search"),
+            TextKey::MacMenuSearch,
             Some(sel!(focusSearch:)),
             ns_string!("f"),
             Some(NSEventModifierFlags::Command),
@@ -477,7 +575,7 @@ mod mac_impl {
         ));
         view_menu.addItem(&create_item(
             mtm,
-            ns_string!("Liked Songs"),
+            TextKey::MacMenuLikedSongs,
             Some(sel!(openLikedSongs:)),
             ns_string!("l"),
             Some(NSEventModifierFlags::Command),
@@ -485,7 +583,7 @@ mod mac_impl {
         ));
         view_menu.addItem(&create_item(
             mtm,
-            ns_string!("Toggle Sidebar"),
+            TextKey::MacMenuToggleSidebar,
             Some(sel!(toggleSidebar:)),
             ns_string!("b"),
             Some(NSEventModifierFlags::Command),
@@ -493,7 +591,7 @@ mod mac_impl {
         ));
         view_menu.addItem(&create_item(
             mtm,
-            ns_string!("Queue"),
+            TextKey::MacMenuQueue,
             Some(sel!(toggleQueue:)),
             ns_string!("u"),
             Some(NSEventModifierFlags::Command),
@@ -502,7 +600,7 @@ mod mac_impl {
         view_menu.addItem(&NSMenuItem::separatorItem(mtm));
         view_menu.addItem(&create_item(
             mtm,
-            ns_string!("Toggle Full Screen"),
+            TextKey::MacMenuToggleFullscreen,
             Some(sel!(toggleFullScreen:)),
             ns_string!("f"),
             Some(NSEventModifierFlags::Control | NSEventModifierFlags::Command),
@@ -511,10 +609,10 @@ mod mac_impl {
         menubar.addItem(&view_item);
 
         // 6. Window menu
-        let (window_item, window_menu) = create_menu(mtm, ns_string!("Window"));
+        let (window_item, window_menu) = create_menu(mtm, TextKey::MacMenuWindow);
         window_menu.addItem(&create_item(
             mtm,
-            ns_string!("Minimize"),
+            TextKey::MacMenuMinimize,
             Some(sel!(performMiniaturize:)),
             ns_string!("m"),
             Some(NSEventModifierFlags::Command),
@@ -522,7 +620,7 @@ mod mac_impl {
         ));
         window_menu.addItem(&create_item(
             mtm,
-            ns_string!("Zoom"),
+            TextKey::MacMenuZoom,
             Some(sel!(performZoom:)),
             ns_string!(""),
             None,
@@ -531,7 +629,7 @@ mod mac_impl {
         window_menu.addItem(&NSMenuItem::separatorItem(mtm));
         window_menu.addItem(&create_item(
             mtm,
-            ns_string!("Bring All to Front"),
+            TextKey::MacMenuBringAllToFront,
             Some(sel!(arrangeInFront:)),
             ns_string!(""),
             None,
@@ -540,10 +638,10 @@ mod mac_impl {
         menubar.addItem(&window_item);
 
         // 7. Help menu
-        let (help_item, help_menu) = create_menu(mtm, ns_string!("Help"));
+        let (help_item, help_menu) = create_menu(mtm, TextKey::MacMenuHelp);
         help_menu.addItem(&create_item(
             mtm,
-            ns_string!("Keyboard Shortcuts"),
+            TextKey::MacMenuKeyboardShortcuts,
             Some(sel!(showShortcuts:)),
             ns_string!("/"),
             Some(NSEventModifierFlags::Command),
@@ -551,7 +649,7 @@ mod mac_impl {
         ));
         help_menu.addItem(&create_item(
             mtm,
-            ns_string!("Fastpotify on GitHub"),
+            TextKey::MacMenuGithub,
             Some(sel!(openRepo:)),
             ns_string!(""),
             None,

@@ -428,7 +428,7 @@ fn main() -> eframe::Result<()> {
                 // repaint.
                 #[cfg(target_os = "macos")]
                 {
-                    fastpotify::mac_menu::init();
+                    fastpotify::mac_menu::init(app.translator.language());
                     let ctx = cc.egui_ctx.clone();
                     fastpotify::mac_menu::set_waker(move || ctx.request_repaint());
                 }

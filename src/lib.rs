@@ -18,7 +18,6 @@ pub mod lyrics;
 pub mod mac_fonts;
 #[cfg(target_os = "macos")]
 pub mod mac_links;
-#[cfg(target_os = "macos")]
 pub mod mac_menu;
 pub mod media;
 #[cfg(target_os = "linux")]
@@ -44,6 +43,7 @@ pub mod tray;
 #[cfg(not(target_os = "linux"))]
 #[path = "tray_native.rs"]
 pub mod tray;
+mod tray_labels;
 pub mod ui;
 pub mod updates;
 pub mod util;

@@ -11,6 +11,7 @@ use std::sync::{Arc, Mutex};
 use serde::Deserialize;
 
 use super::shm::Ring;
+use crate::settings::LanguageChoice;
 use crate::vis::AudioTap;
 
 /// The tag the child puts before its event lines, so libprojectM's own
@@ -58,6 +59,7 @@ struct Running {
     fps: u32,
     seconds: u32,
     scale: u32,
+    language: LanguageChoice,
     /// The song last told to the window, which overlays a change.
     song: Option<Vec<String>>,
 }
@@ -94,6 +96,7 @@ impl Host {
         fps: u32,
         seconds: u32,
         scale: u32,
+        language: LanguageChoice,
     ) {
         if self.running.is_some() {
             return;
@@ -132,6 +135,11 @@ impl Host {
             .arg(seconds.to_string())
             .arg("--milkdrop-scale")
             .arg(scale.to_string())
+            .arg("--milkdrop-language")
+            .arg(match language {
+                LanguageChoice::English => "english",
+                LanguageChoice::Spanish => "spanish",
+            })
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit());
@@ -165,22 +173,42 @@ impl Host {
             fps,
             seconds,
             scale,
+            language,
             song: None,
         });
     }
 
     /// Sends new settings to the window, if they changed.
-    pub fn update(&mut self, fps: u32, seconds: u32, scale: u32) {
+    pub fn update(&mut self, fps: u32, seconds: u32, scale: u32, language: LanguageChoice) {
         let Some(running) = &mut self.running else {
             return;
         };
-        if running.fps == fps && running.seconds == seconds && running.scale == scale {
+        if running.fps == fps
+            && running.seconds == seconds
+            && running.scale == scale
+            && running.language == language
+        {
             return;
         }
         running.fps = fps;
         running.seconds = seconds;
         running.scale = scale;
-        let line = format!("{{\"fps\":{fps},\"seconds\":{seconds},\"scale\":{scale}}}\n");
+        let language_changed = running.language != language;
+        running.language = language;
+        let language_value = match language {
+            LanguageChoice::English => "english",
+            LanguageChoice::Spanish => "spanish",
+        };
+        let value = settings_control(
+            fps,
+            seconds,
+            scale,
+            language_changed.then_some(language_value),
+        );
+        let Ok(mut line) = serde_json::to_string(&value) else {
+            return;
+        };
+        line.push('\n');
         if running.stdin.write_all(line.as_bytes()).is_err() {
             // The child is gone; the next poll will report it closed.
             self.tap.set_shm(None);
@@ -332,6 +360,19 @@ fn sane_position([x, y]: [f32; 2]) -> bool {
     x.is_finite() && y.is_finite() && x.abs() <= 100_000.0 && y.abs() <= 100_000.0
 }
 
+fn settings_control(
+    fps: u32,
+    seconds: u32,
+    scale: u32,
+    language: Option<&str>,
+) -> serde_json::Value {
+    let mut value = serde_json::json!({ "fps": fps, "seconds": seconds, "scale": scale });
+    if let Some(language) = language {
+        value["language"] = serde_json::Value::String(language.to_string());
+    }
+    value
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -342,5 +383,14 @@ mod tests {
         assert_eq!(sane_size([2_621_440.0, 1_966_080.0]), None);
         assert!(sane_position([-1920.0, 40.0]));
         assert!(!sane_position([553_984.0, 1_042_432.0]));
+    }
+
+    #[test]
+    fn language_is_sent_only_when_it_changes() {
+        let unchanged = settings_control(60, 30, 1, None);
+        assert!(unchanged.get("language").is_none());
+        let changed = settings_control(60, 30, 1, Some("spanish"));
+        assert_eq!(changed["language"], "spanish");
+        assert_eq!(changed["fps"], 60);
     }
 }
