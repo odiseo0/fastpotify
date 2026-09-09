@@ -584,7 +584,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                             ui,
                             &palette,
                             None,
-                            choice.label(),
+                            choice.native_label(),
                             app.settings.language == choice,
                         )
                         .clicked()

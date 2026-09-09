@@ -17,11 +17,16 @@ impl LanguageChoice {
 
     /// Language names stay in their own language so the selector remains
     /// usable after any language change.
-    pub fn label(self) -> &'static str {
+    pub fn native_label(self) -> &'static str {
         match self {
             Self::English => "English",
             Self::Spanish => "Español",
         }
+    }
+
+    /// The existing public label remains available to callers.
+    pub fn label(self) -> &'static str {
+        self.native_label()
     }
 }
 
@@ -313,6 +318,8 @@ mod tests {
         );
         assert_eq!(LanguageChoice::English.label(), "English");
         assert_eq!(LanguageChoice::Spanish.label(), "Español");
+        assert_eq!(LanguageChoice::English.native_label(), "English");
+        assert_eq!(LanguageChoice::Spanish.native_label(), "Español");
         let settings: Settings = serde_json::from_str("{}").unwrap();
         assert_eq!(settings.language, LanguageChoice::English);
     }
