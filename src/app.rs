@@ -2520,6 +2520,7 @@ impl App {
                 }
                 if !page.items.loaded_once && page.items.can_load_more() {
                     page.items.loading = true;
+                    page.items_error_key = None;
                     self.backend.api(ApiRequest::PlaylistItems {
                         id: id.clone(),
                         offset: 0,
@@ -2753,6 +2754,7 @@ impl App {
                     let list = &mut page.items;
                     if let Some(offset) = list.next_offset.filter(|_| list.can_load_more()) {
                         list.loading = true;
+                        page.items_error_key = None;
                         self.backend.api(ApiRequest::PlaylistItems {
                             id,
                             offset,
@@ -2797,6 +2799,7 @@ impl App {
             page.generation = self.load_generation;
             page.items.reset_at(offset);
             page.items.loading = true;
+            page.items_error_key = None;
             page.tail_checked = false;
             page.cache_restored_through = None;
             page.pending_cache = None;
@@ -2845,6 +2848,7 @@ impl App {
                     self.load_generation += 1;
                     playlist.generation = self.load_generation;
                     playlist.items.loading = true;
+                    playlist.items_error_key = None;
                     playlist.cache_checked = true;
                     playlist.cache_restored_through = None;
                     playlist.pending_cache = None;
@@ -3078,14 +3082,21 @@ impl App {
 
     /// Name for a playlist created from the queue.
     pub fn queue_playlist_name(&self) -> String {
+        self.queue_playlist_name_with(Translator::new(crate::settings::LanguageChoice::English))
+    }
+
+    /// Name for a playlist created from the queue in the selected language.
+    pub fn queue_playlist_name_with(&self, translator: Translator) -> String {
         if let Some(context) = self.playing_context_uri()
             && let Some(id) = context.strip_prefix("spotify:station:track:")
             && let Some(track) = self.track_cache.get(id)
         {
-            return format!("{} Radio", track.name);
+            return translator.message(&Message::QueueRadioPlaylistName {
+                track: track.name.clone(),
+            });
         }
         let today = jiff::Zoned::now().strftime("%Y-%m-%d").to_string();
-        format!("Queue {today}")
+        translator.message(&Message::QueuePlaylistName { date: today })
     }
 
     /// Saves the queue as a new playlist.
@@ -3094,7 +3105,7 @@ impl App {
         if uris.is_empty() {
             return;
         }
-        let name = self.queue_playlist_name();
+        let name = self.queue_playlist_name_with(self.translator);
         self.actions.push(Action::CreatePlaylist {
             name,
             public: false,
@@ -3687,6 +3698,7 @@ impl App {
                             // a longer cached prefix was restored.
                         }
                         Ok(items) => {
+                            page.items_error_key = None;
                             tracks = items
                                 .items
                                 .iter()
@@ -3711,7 +3723,10 @@ impl App {
                             page.items.absorb(offset, items);
                             page.items_generation = generation;
                         }
-                        Err(error) => page.items.fail(friendly_page_error(&error)),
+                        Err(error) => {
+                            page.items_error_key = friendly_page_error_key(&error);
+                            page.items.fail(error.to_string());
+                        }
                     }
                 }
                 for track in &tracks {
@@ -6670,12 +6685,10 @@ fn remote_action_text_key(action: RemoteAction) -> TextKey {
     }
 }
 
-fn friendly_page_error(error: &crate::api::ApiError) -> String {
+fn friendly_page_error_key(error: &crate::api::ApiError) -> Option<TextKey> {
     match error.status() {
-        Some(403) | Some(404) => {
-            "Spotify doesn't make this playlist's songs available to third-party apps.".to_string()
-        }
-        _ => error.to_string(),
+        Some(403) | Some(404) => Some(TextKey::PlaylistSongsUnavailableThirdParty),
+        _ => None,
     }
 }
 
@@ -8050,6 +8063,40 @@ mod tests {
     }
 
     #[test]
+    fn playlist_access_error_keeps_a_key_for_live_language_changes() {
+        let mut app = test_app("translated-playlist-access-error");
+        app.playlist_pages.insert(
+            "restricted".into(),
+            PlaylistPage {
+                generation: 4,
+                ..Default::default()
+            },
+        );
+
+        app.handle_api(ApiResponse::PlaylistItems {
+            id: "restricted".into(),
+            offset: 0,
+            generation: 4,
+            result: Err(crate::api::ApiError::Status {
+                status: 403,
+                message: "request-id=restricted-42".into(),
+            }),
+        });
+
+        let page = &app.playlist_pages["restricted"];
+        let error_key = page.items_error_key.unwrap();
+        assert_eq!(error_key, TextKey::PlaylistSongsUnavailableThirdParty);
+        assert_eq!(
+            page.items.error.as_deref(),
+            Some("request-id=restricted-42")
+        );
+        let english = app.translator.text(error_key).to_string();
+        app.translator = Translator::new(crate::settings::LanguageChoice::Spanish);
+        let spanish = app.translator.text(error_key);
+        assert_ne!(english, spanish);
+    }
+
+    #[test]
     fn slow_spotify_suggests_a_personal_app_once_a_day() {
         let mut app = test_app("personal-app-nudge");
         app.auth = AuthStatus::Connected {
@@ -8314,8 +8361,19 @@ mod tests {
             at: Instant::now(),
         });
         assert_eq!(app.queue_playlist_name(), "Wish You Were Here Radio");
+        let spanish = Translator::new(crate::settings::LanguageChoice::Spanish);
+        let translated = app.queue_playlist_name_with(spanish);
+        assert_eq!(
+            translated,
+            spanish.message(&Message::QueueRadioPlaylistName {
+                track: "Wish You Were Here".into(),
+            })
+        );
+        assert!(translated.contains("Wish You Were Here"));
         app.assumed_context = None;
         assert!(app.queue_playlist_name().starts_with("Queue "));
+        let translated = app.queue_playlist_name_with(spanish);
+        assert!(translated.contains(&jiff::Zoned::now().strftime("%Y-%m-%d").to_string()));
     }
 
     /// Song radio opens the queue panel.

@@ -31,7 +31,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
     let results = match &app.search.results {
         Loadable::Loaded(results) => results.clone(),
         Loadable::Loading | Loadable::NotLoaded => {
-            widgets::loading_row(ui, &palette);
+            widgets::loading_row(ui, &palette, app.translator);
             return;
         }
         Loadable::Failed(error) => {

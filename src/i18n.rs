@@ -137,11 +137,16 @@ macro_rules! text_keys {
             CommonShowLess,
             CommonSeeMore,
             CommonLoadMore,
+            CommonLoading,
             CommonRetry,
             CommonClose,
             CommonCancel,
             CommonTryAgain,
             CommonSettings,
+            WindowMinimize,
+            WindowRestore,
+            WindowMaximize,
+            WindowClose,
             CommonKeyboardShortcuts,
             CommonSignOut,
             CommonHome,
@@ -208,6 +213,8 @@ macro_rules! text_keys {
             TopbarShowSidebarControl,
             TopbarShowSidebarCommand,
             TopbarSearchHint,
+            SearchClear,
+            PlaylistSongsUnavailableThirdParty,
             TopbarMilkdropControl,
             TopbarMilkdropCommand,
             TopbarWinampControl,
@@ -692,6 +699,16 @@ pub enum Message {
     NoticeAddedToPlaylist {
         name: String,
     },
+    TrackPlayAccessibility {
+        name: String,
+        subtitle: String,
+    },
+    QueueRadioPlaylistName {
+        track: String,
+    },
+    QueuePlaylistName {
+        date: String,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -846,6 +863,17 @@ mod tests {
             translator.text(TextKey::SettingsCheckForUpdates),
             "Check for updates"
         );
+        assert_eq!(translator.text(TextKey::CommonLoading), "Loading…");
+        assert_eq!(translator.text(TextKey::CommonRetry), "Retry");
+        assert_eq!(translator.text(TextKey::WindowMinimize), "Minimize");
+        assert_eq!(translator.text(TextKey::WindowRestore), "Restore");
+        assert_eq!(translator.text(TextKey::WindowMaximize), "Maximize");
+        assert_eq!(translator.text(TextKey::WindowClose), "Close");
+        assert_eq!(translator.text(TextKey::SearchClear), "Clear");
+        assert_eq!(
+            translator.text(TextKey::PlaylistSongsUnavailableThirdParty),
+            "Spotify doesn't make this playlist's songs available to third-party apps."
+        );
         assert_eq!(
             translator.message(&Message::NoticeDetail {
                 prefix: TextKey::NoticePlaybackFailedPrefix,
@@ -865,6 +893,41 @@ mod tests {
             }),
             "Removed from playlist"
         );
+        assert_eq!(
+            translator.message(&Message::TrackPlayAccessibility {
+                name: "Canción de Ana".into(),
+                subtitle: "Artista José".into(),
+            }),
+            "Play Canción de Ana, Artista José"
+        );
+    }
+
+    #[test]
+    fn accessibility_messages_keep_spotify_text_in_both_languages() {
+        let message = Message::TrackPlayAccessibility {
+            name: "Canción de Ana".into(),
+            subtitle: "Artista José".into(),
+        };
+        for language in LanguageChoice::ALL {
+            let text = Translator::new(language).message(&message);
+            assert!(text.contains("Canción de Ana"));
+            assert!(text.contains("Artista José"));
+        }
+    }
+
+    #[test]
+    fn queue_playlist_names_keep_song_titles_and_dates() {
+        for language in LanguageChoice::ALL {
+            let translator = Translator::new(language);
+            let radio = translator.message(&Message::QueueRadioPlaylistName {
+                track: "Wish You Were Here".into(),
+            });
+            let queue = translator.message(&Message::QueuePlaylistName {
+                date: "2026-09-09".into(),
+            });
+            assert!(radio.contains("Wish You Were Here"));
+            assert!(queue.contains("2026-09-09"));
+        }
     }
 
     #[test]

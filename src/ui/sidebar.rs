@@ -466,6 +466,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
         let response = super::widgets::search_field(
             ui,
             &palette,
+            translator,
             egui::Id::new("sidebar-search"),
             &mut app.library.filter,
             translator.text(TextKey::SidebarSearchLibrary),
@@ -717,7 +718,7 @@ fn contents(app: &mut App, ui: &mut egui::Ui) {
         .auto_shrink([false, false])
         .show(ui, |ui| {
             if loading {
-                super::widgets::loading_row(ui, &palette);
+                super::widgets::loading_row(ui, &palette, app.translator);
             }
             if let Some(error) = &error {
                 super::widgets::error_row(ui, app, error, None);

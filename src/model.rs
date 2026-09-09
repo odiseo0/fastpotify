@@ -509,6 +509,9 @@ pub struct PlaylistPage {
     pub items_generation: u64,
     pub playlist: Loadable<Playlist>,
     pub items: PagedList<PlaylistItem>,
+    /// App-owned error text for the item request. Raw service errors remain
+    /// in `items.error`.
+    pub items_error_key: Option<crate::i18n::TextKey>,
     pub filter: String,
     /// Contributor IDs from loaded pages and a sample of the final page.
     pub contributors: std::collections::BTreeSet<String>,

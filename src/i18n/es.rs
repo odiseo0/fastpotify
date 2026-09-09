@@ -175,11 +175,16 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::CommonShowLess => "TODO(es) Show less",
         TextKey::CommonSeeMore => "TODO(es) See more",
         TextKey::CommonLoadMore => "TODO(es) Load more",
+        TextKey::CommonLoading => "TODO(es) Loading…",
         TextKey::CommonRetry => "TODO(es) Retry",
         TextKey::CommonClose => "TODO(es) Close",
         TextKey::CommonCancel => "TODO(es) Cancel",
         TextKey::CommonTryAgain => "TODO(es) Try again",
         TextKey::CommonSettings => "TODO(es) Settings",
+        TextKey::WindowMinimize => "TODO(es) Minimize",
+        TextKey::WindowRestore => "TODO(es) Restore",
+        TextKey::WindowMaximize => "TODO(es) Maximize",
+        TextKey::WindowClose => "TODO(es) Close",
         TextKey::CommonKeyboardShortcuts => "TODO(es) Keyboard shortcuts",
         TextKey::CommonSignOut => "TODO(es) Sign out",
         TextKey::CommonHome => "TODO(es) Home",
@@ -250,6 +255,10 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::TopbarShowSidebarControl => "TODO(es) Show sidebar (Ctrl+B)",
         TextKey::TopbarShowSidebarCommand => "TODO(es) Show sidebar (Cmd+B)",
         TextKey::TopbarSearchHint => "TODO(es) What do you want to play?",
+        TextKey::SearchClear => "TODO(es) Clear",
+        TextKey::PlaylistSongsUnavailableThirdParty => {
+            "TODO(es) Spotify doesn't make this playlist's songs available to third-party apps."
+        }
         TextKey::TopbarMilkdropControl => "TODO(es) MilkDrop visualiser (Ctrl+Shift+K)",
         TextKey::TopbarMilkdropCommand => "TODO(es) MilkDrop visualiser (Cmd+Shift+K)",
         TextKey::TopbarWinampControl => "TODO(es) Winamp mini player (Ctrl+M)",
@@ -703,6 +712,11 @@ pub(super) fn message(message: &Message) -> String {
         }
         Message::NoticeText { key } => text(*key).to_string(),
         Message::NoticeAddedToPlaylist { name } => format!("TODO(es) Added to {name}"),
+        Message::TrackPlayAccessibility { name, subtitle } => {
+            format!("TODO(es) Play {name}, {subtitle}")
+        }
+        Message::QueueRadioPlaylistName { track } => format!("{track} TODO(es) Radio"),
+        Message::QueuePlaylistName { date } => format!("TODO(es) Queue {date}"),
     }
 }
 

@@ -175,11 +175,16 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::CommonShowLess => "Show less",
         TextKey::CommonSeeMore => "See more",
         TextKey::CommonLoadMore => "Load more",
+        TextKey::CommonLoading => "Loading…",
         TextKey::CommonRetry => "Retry",
         TextKey::CommonClose => "Close",
         TextKey::CommonCancel => "Cancel",
         TextKey::CommonTryAgain => "Try again",
         TextKey::CommonSettings => "Settings",
+        TextKey::WindowMinimize => "Minimize",
+        TextKey::WindowRestore => "Restore",
+        TextKey::WindowMaximize => "Maximize",
+        TextKey::WindowClose => "Close",
         TextKey::CommonKeyboardShortcuts => "Keyboard shortcuts",
         TextKey::CommonSignOut => "Sign out",
         TextKey::CommonHome => "Home",
@@ -250,6 +255,10 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::TopbarShowSidebarControl => "Show sidebar (Ctrl+B)",
         TextKey::TopbarShowSidebarCommand => "Show sidebar (Cmd+B)",
         TextKey::TopbarSearchHint => "What do you want to play?",
+        TextKey::SearchClear => "Clear",
+        TextKey::PlaylistSongsUnavailableThirdParty => {
+            "Spotify doesn't make this playlist's songs available to third-party apps."
+        }
         TextKey::TopbarMilkdropControl => "MilkDrop visualiser (Ctrl+Shift+K)",
         TextKey::TopbarMilkdropCommand => "MilkDrop visualiser (Cmd+Shift+K)",
         TextKey::TopbarWinampControl => "Winamp mini player (Ctrl+M)",
@@ -666,6 +675,11 @@ pub(super) fn message(message: &Message) -> String {
         }
         Message::NoticeText { key } => text(*key).to_string(),
         Message::NoticeAddedToPlaylist { name } => format!("Added to {name}"),
+        Message::TrackPlayAccessibility { name, subtitle } => {
+            format!("Play {name}, {subtitle}")
+        }
+        Message::QueueRadioPlaylistName { track } => format!("{track} Radio"),
+        Message::QueuePlaylistName { date } => format!("Queue {date}"),
     }
 }
 

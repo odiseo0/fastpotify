@@ -254,6 +254,7 @@ pub fn actions_row(
                 widgets::search_field(
                     ui,
                     &palette,
+                    app.translator,
                     egui::Id::new(("collection-filter", &actions.play_uri)),
                     filter,
                     app.translator.text(TextKey::CollectionFilter),
@@ -639,7 +640,7 @@ pub fn table(app: &mut App, ui: &mut egui::Ui, table: Table<'_>) {
     }
     if table.loading {
         ui.add_space(8.0);
-        widgets::loading_row(ui, &palette);
+        widgets::loading_row(ui, &palette, app.translator);
     }
     if let Some(error) = table.error {
         ui.add_space(8.0);
@@ -800,7 +801,7 @@ pub fn top_songs(app: &mut App, ui: &mut egui::Ui) {
     let tracks = match &app.home.top_songs {
         Loadable::Loaded(tracks) => tracks,
         Loadable::Loading | Loadable::NotLoaded => {
-            widgets::loading_row(ui, &palette);
+            widgets::loading_row(ui, &palette, app.translator);
             return;
         }
         Loadable::Failed(error) => {
@@ -998,6 +999,9 @@ pub fn playlist(app: &mut App, ui: &mut egui::Ui, id: &str) {
             let editable = app
                 .can_edit_playlist(playlist)
                 .then(|| (playlist.id.clone(), playlist.snapshot_id.clone()));
+            let item_error = page
+                .items_error_key
+                .map(|key| app.translator.text(key).to_string());
             table(
                 app,
                 ui,
@@ -1014,7 +1018,7 @@ pub fn playlist(app: &mut App, ui: &mut egui::Ui, id: &str) {
                     show_added_by: made_together,
                     page: Page::Playlist(id.to_string()),
                     loading: page.items.loading,
-                    error: page.items.error.as_deref(),
+                    error: item_error.as_deref().or(page.items.error.as_deref()),
                     can_load_more: page.items.can_load_more(),
                     filter: &page.filter,
                     items_revision: page.items.revision,
@@ -1023,7 +1027,7 @@ pub fn playlist(app: &mut App, ui: &mut egui::Ui, id: &str) {
         }
         Loadable::Loading | Loadable::NotLoaded => {
             ui.add_space(40.0);
-            widgets::loading_row(ui, &palette);
+            widgets::loading_row(ui, &palette, app.translator);
         }
         Loadable::Failed(error) => {
             let error = error.clone();
@@ -1163,7 +1167,7 @@ pub fn album(app: &mut App, ui: &mut egui::Ui, id: &str) {
         }
         Loadable::Loading | Loadable::NotLoaded => {
             ui.add_space(40.0);
-            widgets::loading_row(ui, &palette);
+            widgets::loading_row(ui, &palette, app.translator);
         }
         Loadable::Failed(error) => {
             let error = error.clone();

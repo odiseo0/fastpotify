@@ -134,6 +134,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             let response = super::widgets::search_field(
                 ui,
                 &palette,
+                translator,
                 id,
                 &mut app.search.query,
                 translator.text(TextKey::TopbarSearchHint),

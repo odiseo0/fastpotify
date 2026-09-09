@@ -40,7 +40,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
     if !signed_in {
         login::show(app, ui, connecting);
         toasts(app, ctx, 20.0);
-        window_controls(ui, &app.palette);
+        window_controls(ui, &app.palette, app.translator);
         window_resize(ui);
         return;
     }
@@ -59,7 +59,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
     dialogs::show(app, ctx);
     widgets::drag_ghost(ctx, &app.palette);
     toasts(app, ctx, theme::PLAYER_BAR_HEIGHT + 16.0);
-    window_controls(ui, &app.palette);
+    window_controls(ui, &app.palette, app.translator);
     window_resize(ui);
 }
 
@@ -251,7 +251,11 @@ pub(super) fn window_controls_reservation(
 }
 
 /// Draws the Windows caption controls over the outermost top-right header.
-pub fn window_controls(ui: &mut egui::Ui, palette: &theme::Palette) {
+pub fn window_controls(
+    ui: &mut egui::Ui,
+    palette: &theme::Palette,
+    translator: crate::i18n::Translator,
+) {
     if !windows_chrome_visible_here(ui.ctx()) {
         return;
     }
@@ -270,15 +274,23 @@ pub fn window_controls(ui: &mut egui::Ui, palette: &theme::Palette) {
                 for (icon, tooltip, command) in [
                     (
                         Icon::Minus,
-                        "Minimize",
+                        translator.text(crate::i18n::TextKey::WindowMinimize),
                         egui::ViewportCommand::Minimized(true),
                     ),
                     (
                         if maximized { Icon::Copy } else { Icon::Square },
-                        if maximized { "Restore" } else { "Maximize" },
+                        translator.text(if maximized {
+                            crate::i18n::TextKey::WindowRestore
+                        } else {
+                            crate::i18n::TextKey::WindowMaximize
+                        }),
                         egui::ViewportCommand::Maximized(!maximized),
                     ),
-                    (Icon::X, "Close", egui::ViewportCommand::Close),
+                    (
+                        Icon::X,
+                        translator.text(crate::i18n::TextKey::WindowClose),
+                        egui::ViewportCommand::Close,
+                    ),
                 ] {
                     let image = icon.image(palette.secondary, 14.0).alt_text(tooltip);
                     let button = egui::Button::image(image).frame_when_inactive(false);

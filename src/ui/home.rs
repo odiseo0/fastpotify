@@ -195,7 +195,7 @@ fn made_for_you(app: &mut App, ui: &mut egui::Ui) {
         translator.text(TextKey::HomeMadeForYou),
         |ui| {
             if playlists.is_empty() && loading {
-                widgets::loading_row(ui, &palette);
+                widgets::loading_row(ui, &palette, translator);
             } else if playlists.is_empty() && failed {
                 widgets::error_row(
                     ui,
@@ -251,7 +251,7 @@ fn recently_played(app: &mut App, ui: &mut egui::Ui) {
                 &palette,
                 "recent",
                 translator.text(TextKey::HomeRecentlyPlayed),
-                |ui| widgets::loading_row(ui, &palette),
+                |ui| widgets::loading_row(ui, &palette, translator),
             );
             return;
         }
@@ -329,7 +329,7 @@ fn top_artists(app: &mut App, ui: &mut egui::Ui) {
                 &palette,
                 "top-artists",
                 translator.text(TextKey::HomeTopArtists),
-                |ui| widgets::loading_row(ui, &palette),
+                |ui| widgets::loading_row(ui, &palette, translator),
             );
             return;
         }
@@ -401,7 +401,7 @@ fn track_list(
             } else {
                 theme::section_title(ui, &palette, title);
             }
-            widgets::loading_row(ui, &palette);
+            widgets::loading_row(ui, &palette, app.translator);
             ui.add_space(12.0);
             return;
         }

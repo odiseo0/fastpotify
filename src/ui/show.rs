@@ -128,7 +128,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
                 episode_row(app, ui, &episodes[index], show_image.as_deref());
             });
             if page.episodes.loading {
-                widgets::loading_row(ui, &palette);
+                widgets::loading_row(ui, &palette, app.translator);
             }
             if let Some(error) = &page.episodes.error {
                 let error = error.clone();
@@ -143,7 +143,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, id: &str) {
         }
         Loadable::Loading | Loadable::NotLoaded => {
             ui.add_space(40.0);
-            widgets::loading_row(ui, &palette);
+            widgets::loading_row(ui, &palette, app.translator);
         }
         Loadable::Failed(error) => {
             let error = error.clone();
