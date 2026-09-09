@@ -1,5 +1,8 @@
 //! Small helpers shared across the application.
 
+use crate::i18n::{Message, TextKey, Translator};
+use crate::settings::LanguageChoice;
+
 /// `3:45` for track lengths, `1:02:03` past an hour.
 pub fn format_duration_ms(ms: u32) -> String {
     let total = ms / 1000;
@@ -15,27 +18,40 @@ pub fn format_duration_ms(ms: u32) -> String {
 
 /// `2 hr 13 min` for playlist totals, `45 min 12 sec` under an hour.
 pub fn format_total_ms(ms: u64) -> String {
+    format_total_ms_with(Translator::new(LanguageChoice::English), ms)
+}
+
+pub fn format_total_ms_with(translator: Translator, ms: u64) -> String {
     let total = ms / 1000;
     let hours = total / 3600;
     let minutes = (total / 60) % 60;
     let seconds = total % 60;
     if hours > 0 {
-        format!("{hours} hr {minutes} min")
+        translator.message(&Message::DurationHoursMinutes { hours, minutes })
     } else if minutes > 0 {
-        format!("{minutes} min {seconds} sec")
+        translator.message(&Message::DurationMinutesSeconds { minutes, seconds })
     } else {
-        format!("{seconds} sec")
+        translator.message(&Message::DurationSeconds { seconds })
     }
 }
 
 /// Episode lengths read as `1 hr 12 min` or `38 min`.
 pub fn format_episode_ms(ms: u32) -> String {
+    format_episode_ms_with(Translator::new(LanguageChoice::English), ms)
+}
+
+pub fn format_episode_ms_with(translator: Translator, ms: u32) -> String {
     let minutes = ms / 60_000;
     let hours = minutes / 60;
     if hours > 0 {
-        format!("{hours} hr {} min", minutes % 60)
+        translator.message(&Message::EpisodeHoursMinutes {
+            hours,
+            minutes: minutes % 60,
+        })
     } else {
-        format!("{} min", minutes.max(1))
+        translator.message(&Message::EpisodeMinutes {
+            minutes: minutes.max(1),
+        })
     }
 }
 
@@ -53,30 +69,42 @@ pub fn format_count(count: u64) -> String {
 
 /// `Jan 5, 2024` from an ISO-8601 timestamp or a bare date.
 pub fn format_date(iso: &str) -> String {
+    format_date_with(Translator::new(LanguageChoice::English), iso)
+}
+
+pub fn format_date_with(translator: Translator, iso: &str) -> String {
     let date = iso.get(..10).unwrap_or(iso);
     let mut parts = date.split('-');
     let (Some(year), Some(month)) = (parts.next(), parts.next()) else {
         return iso.to_string();
     };
     let day = parts.next();
-    let month_name = match month {
-        "01" => "Jan",
-        "02" => "Feb",
-        "03" => "Mar",
-        "04" => "Apr",
-        "05" => "May",
-        "06" => "Jun",
-        "07" => "Jul",
-        "08" => "Aug",
-        "09" => "Sep",
-        "10" => "Oct",
-        "11" => "Nov",
-        "12" => "Dec",
+    let month_key = match month {
+        "01" => TextKey::DateMonthJan,
+        "02" => TextKey::DateMonthFeb,
+        "03" => TextKey::DateMonthMar,
+        "04" => TextKey::DateMonthApr,
+        "05" => TextKey::DateMonthMay,
+        "06" => TextKey::DateMonthJun,
+        "07" => TextKey::DateMonthJul,
+        "08" => TextKey::DateMonthAug,
+        "09" => TextKey::DateMonthSep,
+        "10" => TextKey::DateMonthOct,
+        "11" => TextKey::DateMonthNov,
+        "12" => TextKey::DateMonthDec,
         _ => return iso.to_string(),
     };
+    let month = translator.text(month_key).to_string();
     match day.and_then(|day| day.trim_start_matches('0').parse::<u8>().ok()) {
-        Some(day) => format!("{month_name} {day}, {year}"),
-        None => format!("{month_name} {year}"),
+        Some(day) => translator.message(&Message::DateDay {
+            month,
+            day,
+            year: year.to_string(),
+        }),
+        None => translator.message(&Message::DateMonthYear {
+            month,
+            year: year.to_string(),
+        }),
     }
 }
 
@@ -86,27 +114,50 @@ pub fn format_date(iso: &str) -> String {
 /// table's compact, time-aware presentation. `now` is an argument so callers
 /// can render against one instant and the boundary behaviour stays testable.
 pub fn format_relative_date(iso: &str, now: jiff::Timestamp) -> String {
+    format_relative_date_with(Translator::new(LanguageChoice::English), iso, now)
+}
+
+pub fn format_relative_date_with(
+    translator: Translator,
+    iso: &str,
+    now: jiff::Timestamp,
+) -> String {
     let Ok(added) = iso.parse::<jiff::Timestamp>() else {
-        return format_date(iso);
+        return format_date_with(translator, iso);
     };
     let seconds = added.duration_until(now).as_secs_f64().floor() as i64;
     if !(0..30 * 24 * 60 * 60).contains(&seconds) {
-        return format_date(iso);
+        return format_date_with(translator, iso);
     }
 
-    let (count, unit) = if seconds < 60 {
-        (seconds, "second")
+    let message = if seconds < 60 {
+        Message::RelativeSeconds { count: seconds }
     } else if seconds < 60 * 60 {
-        (seconds / 60, "minute")
+        Message::RelativeMinutes {
+            count: seconds / 60,
+        }
     } else if seconds < 24 * 60 * 60 {
-        (seconds / (60 * 60), "hour")
+        Message::RelativeHours {
+            count: seconds / (60 * 60),
+        }
     } else if seconds < 7 * 24 * 60 * 60 {
-        (seconds / (24 * 60 * 60), "day")
+        Message::RelativeDays {
+            count: seconds / (24 * 60 * 60),
+        }
     } else {
-        (seconds / (7 * 24 * 60 * 60), "week")
+        Message::RelativeWeeks {
+            count: seconds / (7 * 24 * 60 * 60),
+        }
     };
-    let plural = if count == 1 { "" } else { "s" };
-    format!("{count} {unit}{plural} ago")
+    translator.message(&message)
+}
+
+pub fn relative_date_is_live(iso: &str, now: jiff::Timestamp) -> bool {
+    let Ok(added) = iso.parse::<jiff::Timestamp>() else {
+        return false;
+    };
+    let seconds = added.duration_until(now).as_secs_f64().floor() as i64;
+    (0..30 * 24 * 60 * 60).contains(&seconds)
 }
 
 /// Tears the id out of `spotify:track:abc` and friends.
@@ -268,6 +319,10 @@ pub(crate) fn replace_file(
 mod tests {
     use super::*;
 
+    fn translator(language: LanguageChoice) -> Translator {
+        Translator::new(language)
+    }
+
     #[test]
     fn durations() {
         assert_eq!(format_duration_ms(225_000), "3:45");
@@ -323,6 +378,38 @@ mod tests {
             "Sep 1, 2026"
         );
         assert_eq!(format_relative_date("not-a-date", now), "not-a-date");
+    }
+
+    #[test]
+    fn translated_duration_helpers_keep_values_and_use_the_catalogue() {
+        let spanish = translator(LanguageChoice::Spanish);
+
+        let seconds = format_total_ms_with(spanish, 0);
+        assert!(seconds.contains('0'));
+        let minute = format_total_ms_with(spanish, 60_000);
+        assert!(minute.contains('1'));
+        let multiple = format_total_ms_with(spanish, 7_980_000);
+        assert!(multiple.contains("2"));
+        assert!(multiple.contains("13"));
+        let episode = format_episode_ms_with(spanish, 4_320_000);
+        assert!(episode.contains("1"));
+        assert!(episode.contains("12"));
+    }
+
+    #[test]
+    fn translated_dates_keep_source_values_and_live_state() {
+        let spanish = translator(LanguageChoice::Spanish);
+        let now: jiff::Timestamp = "2026-08-31T12:00:00Z".parse().unwrap();
+
+        let date = format_date_with(spanish, "2024-01-05T10:00:00Z");
+        assert!(date.contains('5'));
+        assert!(date.contains("2024"));
+        let relative = format_relative_date_with(spanish, "2026-08-31T11:59:00Z", now);
+        assert!(relative.contains('1'));
+        assert!(relative_date_is_live("2026-08-31T11:59:00Z", now));
+        assert!(!relative_date_is_live("2026-08-01T12:00:00Z", now));
+        assert!(!relative_date_is_live("2026-09-01T12:00:00Z", now));
+        assert_eq!(format_date_with(spanish, "not-a-date"), "not-a-date");
     }
 
     #[test]

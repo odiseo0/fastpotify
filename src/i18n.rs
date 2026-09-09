@@ -381,6 +381,66 @@ macro_rules! text_keys {
             CollectionPlaylistRemoveLibrary,
             CollectionAlbumSaveLibrary,
             CollectionAlbumRemoveLibrary
+            ,DateMonthJan,
+            DateMonthFeb,
+            DateMonthMar,
+            DateMonthApr,
+            DateMonthMay,
+            DateMonthJun,
+            DateMonthJul,
+            DateMonthAug,
+            DateMonthSep,
+            DateMonthOct,
+            DateMonthNov,
+            DateMonthDec
+            ,NoticeUpToDate,
+            NoticeQueueCleared,
+            NoticePlaylistUpdated,
+            NoticeAddedLibrary,
+            NoticeRemovedLibrary,
+            NoticeAddedLikedSongs,
+            NoticeRemovedLikedSongs,
+            NoticeFollowingArtist,
+            NoticeUnfollowedArtist,
+            NoticeSavedLibrary,
+            NoticeEpisodePodcastUnavailable,
+            NoticeSongAlbumUnavailable,
+            NoticeUnsupportedSpotifyLink,
+            NoticeNothingPlaying,
+            NoticeChooseDevice,
+            NoticePickSomething,
+            NoticePickContext,
+            NoticeLinkCopied,
+            NoticeRestartingPlayback,
+            NoticeAudioDisconnected,
+            NoticePremiumRequired,
+            NoticeOpeningPlaybackSetup,
+            NoticeHistoryCleared,
+            NoticePersonalAppNudge,
+            NoticeSignInExpired,
+            NoticeUpdateCheckFailedPrefix,
+            NoticeLocalPlaybackPrefix,
+            NoticeProfileLoadFailedPrefix,
+            NoticeListDevicesFailedPrefix,
+            NoticeLoadMorePlaylistsFailedPrefix,
+            NoticeCreatePlaylistFailedPrefix,
+            NoticeUpdatePlaylistFailedPrefix,
+            NoticePlaylistChangeFailedPrefix,
+            NoticeLibraryUpdateFailedPrefix,
+            NoticeCannotOpenSongPrefix,
+            NoticeCannotOpenEpisodePrefix,
+            NoticeSwitchDeviceFailedPrefix,
+            NoticeAddQueueFailedPrefix,
+            NoticeClearArtworkFailedPrefix,
+            NoticeChooseDeviceHint
+            ,NoticeRemoteStartFailed,
+            NoticeRemotePauseFailed,
+            NoticeRemoteNextFailed,
+            NoticeRemotePreviousFailed,
+            NoticeRemoteSeekFailed,
+            NoticeRemoteVolumeFailed,
+            NoticeRemoteShuffleFailed,
+            NoticeRemoteRepeatFailed
         }
     };
 }
@@ -543,6 +603,79 @@ pub enum Message {
     CollectionSongCountDuration {
         count: u64,
         duration: String,
+    },
+    DurationHoursMinutes {
+        hours: u64,
+        minutes: u64,
+    },
+    DurationMinutesSeconds {
+        minutes: u64,
+        seconds: u64,
+    },
+    DurationSeconds {
+        seconds: u64,
+    },
+    EpisodeHoursMinutes {
+        hours: u32,
+        minutes: u32,
+    },
+    EpisodeMinutes {
+        minutes: u32,
+    },
+    DateDay {
+        month: String,
+        day: u8,
+        year: String,
+    },
+    DateMonthYear {
+        month: String,
+        year: String,
+    },
+    RelativeSeconds {
+        count: i64,
+    },
+    RelativeMinutes {
+        count: i64,
+    },
+    RelativeHours {
+        count: i64,
+    },
+    RelativeDays {
+        count: i64,
+    },
+    RelativeWeeks {
+        count: i64,
+    },
+    NoticeDetail {
+        prefix: TextKey,
+        detail: String,
+    },
+    NoticeReceiverReady {
+        name: String,
+    },
+    NoticeReceiverFailed {
+        name: String,
+        detail: String,
+    },
+    NoticeUpdateAvailable {
+        version: String,
+    },
+    NoticePlaylistCreated {
+        name: String,
+    },
+    NoticeItemPlayNext {
+        name: String,
+    },
+    NoticeSongsPlayNext {
+        count: usize,
+    },
+    NoticeArtworkCleared {
+        megabytes: String,
+    },
+    NoticeRemoteActionFailed {
+        action: String,
+        detail: String,
+        choose_device: bool,
     },
 }
 

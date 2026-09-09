@@ -284,7 +284,7 @@ pub fn episode_row(
     }
     let mut meta = Vec::new();
     if let Some(date) = &episode.release_date {
-        meta.push(util::format_date(date));
+        meta.push(util::format_date_with(translator, date));
     }
     let resume = episode.resume_point.as_ref();
     let remaining = resume
@@ -296,9 +296,12 @@ pub fn episode_row(
         });
     match remaining {
         Some(left) => meta.push(translator.message(&Message::EpisodeTimeLeft {
-            time: util::format_episode_ms(left),
+            time: util::format_episode_ms_with(translator, left),
         })),
-        None => meta.push(util::format_episode_ms(episode.duration_ms)),
+        None => meta.push(util::format_episode_ms_with(
+            translator,
+            episode.duration_ms,
+        )),
     }
     let meta_text = meta.join(" • ");
     let meta_galley =

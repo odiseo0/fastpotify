@@ -429,6 +429,80 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::CollectionPlaylistRemoveLibrary => "TODO(es) Remove from Your Library",
         TextKey::CollectionAlbumSaveLibrary => "TODO(es) Save to Your Library",
         TextKey::CollectionAlbumRemoveLibrary => "TODO(es) Remove from Your Library",
+        TextKey::DateMonthJan => "TODO(es) Jan",
+        TextKey::DateMonthFeb => "TODO(es) Feb",
+        TextKey::DateMonthMar => "TODO(es) Mar",
+        TextKey::DateMonthApr => "TODO(es) Apr",
+        TextKey::DateMonthMay => "TODO(es) May",
+        TextKey::DateMonthJun => "TODO(es) Jun",
+        TextKey::DateMonthJul => "TODO(es) Jul",
+        TextKey::DateMonthAug => "TODO(es) Aug",
+        TextKey::DateMonthSep => "TODO(es) Sep",
+        TextKey::DateMonthOct => "TODO(es) Oct",
+        TextKey::DateMonthNov => "TODO(es) Nov",
+        TextKey::DateMonthDec => "TODO(es) Dec",
+        TextKey::NoticeUpToDate => "TODO(es) Fastpotify is up to date",
+        TextKey::NoticeQueueCleared => "TODO(es) Queue cleared",
+        TextKey::NoticePlaylistUpdated => "TODO(es) Playlist updated",
+        TextKey::NoticeAddedLibrary => "TODO(es) Added to Your Library",
+        TextKey::NoticeRemovedLibrary => "TODO(es) Removed from Your Library",
+        TextKey::NoticeAddedLikedSongs => "TODO(es) Added to Liked Songs",
+        TextKey::NoticeRemovedLikedSongs => "TODO(es) Removed from Liked Songs",
+        TextKey::NoticeFollowingArtist => "TODO(es) Following artist",
+        TextKey::NoticeUnfollowedArtist => "TODO(es) Unfollowed artist",
+        TextKey::NoticeSavedLibrary => "TODO(es) Saved to Your Library",
+        TextKey::NoticeEpisodePodcastUnavailable => {
+            "TODO(es) This episode's podcast is not on Spotify"
+        }
+        TextKey::NoticeSongAlbumUnavailable => "TODO(es) This song's album is not on Spotify",
+        TextKey::NoticeUnsupportedSpotifyLink => {
+            "TODO(es) Fastpotify cannot open this kind of Spotify link"
+        }
+        TextKey::NoticeNothingPlaying => "TODO(es) Nothing is playing. Pick something first",
+        TextKey::NoticeChooseDevice => {
+            "TODO(es) Choose a device, or enable playback on this computer"
+        }
+        TextKey::NoticePickSomething => "TODO(es) Pick something to play",
+        TextKey::NoticePickContext => "TODO(es) Pick a song, album, or playlist",
+        TextKey::NoticeLinkCopied => "TODO(es) Link copied",
+        TextKey::NoticeRestartingPlayback => "TODO(es) Restarting local playback",
+        TextKey::NoticeAudioDisconnected => {
+            "TODO(es) Spotify audio disconnected. Reconnecting local playback"
+        }
+        TextKey::NoticePremiumRequired => "TODO(es) Local playback needs Spotify Premium",
+        TextKey::NoticeOpeningPlaybackSetup => {
+            "TODO(es) Opening your browser to set up local playback"
+        }
+        TextKey::NoticeHistoryCleared => "TODO(es) Play history cleared",
+        TextKey::NoticePersonalAppNudge => {
+            "TODO(es) Spotify is taking a while. Set up a personal app in Settings for a separate API quota"
+        }
+        TextKey::NoticeSignInExpired => {
+            "TODO(es) Your Spotify sign-in expired. Please sign in again."
+        }
+        TextKey::NoticeUpdateCheckFailedPrefix => "TODO(es) Couldn't check for updates",
+        TextKey::NoticeLocalPlaybackPrefix => "TODO(es) Local playback",
+        TextKey::NoticeProfileLoadFailedPrefix => "TODO(es) Couldn't load your profile",
+        TextKey::NoticeListDevicesFailedPrefix => "TODO(es) Couldn't list devices",
+        TextKey::NoticeLoadMorePlaylistsFailedPrefix => "TODO(es) Couldn't load more playlists",
+        TextKey::NoticeCreatePlaylistFailedPrefix => "TODO(es) Couldn't create the playlist",
+        TextKey::NoticeUpdatePlaylistFailedPrefix => "TODO(es) Couldn't update the playlist",
+        TextKey::NoticePlaylistChangeFailedPrefix => "TODO(es) Playlist change failed",
+        TextKey::NoticeLibraryUpdateFailedPrefix => "TODO(es) Couldn't update your library",
+        TextKey::NoticeCannotOpenSongPrefix => "TODO(es) Cannot open this song",
+        TextKey::NoticeCannotOpenEpisodePrefix => "TODO(es) Cannot open this episode",
+        TextKey::NoticeSwitchDeviceFailedPrefix => "TODO(es) Couldn't switch device",
+        TextKey::NoticeAddQueueFailedPrefix => "TODO(es) Couldn't add to queue",
+        TextKey::NoticeClearArtworkFailedPrefix => "TODO(es) Couldn't clear artwork",
+        TextKey::NoticeChooseDeviceHint => "TODO(es) Choose a device from the devices menu first.",
+        TextKey::NoticeRemoteStartFailed => "TODO(es) Couldn't start playback",
+        TextKey::NoticeRemotePauseFailed => "TODO(es) Couldn't pause",
+        TextKey::NoticeRemoteNextFailed => "TODO(es) Couldn't skip",
+        TextKey::NoticeRemotePreviousFailed => "TODO(es) Couldn't go back",
+        TextKey::NoticeRemoteSeekFailed => "TODO(es) Couldn't seek",
+        TextKey::NoticeRemoteVolumeFailed => "TODO(es) Couldn't change the volume",
+        TextKey::NoticeRemoteShuffleFailed => "TODO(es) Couldn't change shuffle",
+        TextKey::NoticeRemoteRepeatFailed => "TODO(es) Couldn't change repeat",
     }
 }
 
@@ -561,5 +635,57 @@ pub(super) fn message(message: &Message) -> String {
                 crate::util::format_count(*count)
             ),
         },
+        Message::DurationHoursMinutes { hours, minutes } => {
+            format!("TODO(es) {hours} hr {minutes} min")
+        }
+        Message::DurationMinutesSeconds { minutes, seconds } => {
+            format!("TODO(es) {minutes} min {seconds} sec")
+        }
+        Message::DurationSeconds { seconds } => format!("TODO(es) {seconds} sec"),
+        Message::EpisodeHoursMinutes { hours, minutes } => {
+            format!("TODO(es) {hours} hr {minutes} min")
+        }
+        Message::EpisodeMinutes { minutes } => format!("TODO(es) {minutes} min"),
+        Message::DateDay { month, day, year } => format!("TODO(es) {month} {day}, {year}"),
+        Message::DateMonthYear { month, year } => format!("TODO(es) {month} {year}"),
+        Message::RelativeSeconds { count } => relative(*count, "second"),
+        Message::RelativeMinutes { count } => relative(*count, "minute"),
+        Message::RelativeHours { count } => relative(*count, "hour"),
+        Message::RelativeDays { count } => relative(*count, "day"),
+        Message::RelativeWeeks { count } => relative(*count, "week"),
+        Message::NoticeDetail { prefix, detail } => format!("{}: {detail}", text(*prefix)),
+        Message::NoticeReceiverReady { name } => format!("TODO(es) {name} is ready"),
+        Message::NoticeReceiverFailed { name, detail } => format!("TODO(es) {name}: {detail}"),
+        Message::NoticeUpdateAvailable { version } => {
+            format!("TODO(es) Fastpotify {version} is available")
+        }
+        Message::NoticePlaylistCreated { name } => format!("TODO(es) Created {name}"),
+        Message::NoticeItemPlayNext { name } => format!("TODO(es) {name} will play next"),
+        Message::NoticeSongsPlayNext { count } => match count {
+            1 => "TODO(es) 1 song will play next".to_string(),
+            count => format!("TODO(es) {count} songs will play next"),
+        },
+        Message::NoticeArtworkCleared { megabytes } => {
+            format!("TODO(es) Cleared {megabytes} MB of artwork")
+        }
+        Message::NoticeRemoteActionFailed {
+            action,
+            detail,
+            choose_device,
+        } => {
+            if *choose_device {
+                format!(
+                    "TODO(es) {action}: {detail}. {}",
+                    text(TextKey::NoticeChooseDeviceHint)
+                )
+            } else {
+                format!("TODO(es) {action}: {detail}.")
+            }
+        }
     }
+}
+
+fn relative(count: i64, unit: &str) -> String {
+    let plural = if count == 1 { "" } else { "s" };
+    format!("TODO(es) {count} {unit}{plural} ago")
 }

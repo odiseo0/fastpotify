@@ -425,6 +425,70 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::CollectionPlaylistRemoveLibrary => "Remove from Your Library",
         TextKey::CollectionAlbumSaveLibrary => "Save to Your Library",
         TextKey::CollectionAlbumRemoveLibrary => "Remove from Your Library",
+        TextKey::DateMonthJan => "Jan",
+        TextKey::DateMonthFeb => "Feb",
+        TextKey::DateMonthMar => "Mar",
+        TextKey::DateMonthApr => "Apr",
+        TextKey::DateMonthMay => "May",
+        TextKey::DateMonthJun => "Jun",
+        TextKey::DateMonthJul => "Jul",
+        TextKey::DateMonthAug => "Aug",
+        TextKey::DateMonthSep => "Sep",
+        TextKey::DateMonthOct => "Oct",
+        TextKey::DateMonthNov => "Nov",
+        TextKey::DateMonthDec => "Dec",
+        TextKey::NoticeUpToDate => "Fastpotify is up to date",
+        TextKey::NoticeQueueCleared => "Queue cleared",
+        TextKey::NoticePlaylistUpdated => "Playlist updated",
+        TextKey::NoticeAddedLibrary => "Added to Your Library",
+        TextKey::NoticeRemovedLibrary => "Removed from Your Library",
+        TextKey::NoticeAddedLikedSongs => "Added to Liked Songs",
+        TextKey::NoticeRemovedLikedSongs => "Removed from Liked Songs",
+        TextKey::NoticeFollowingArtist => "Following artist",
+        TextKey::NoticeUnfollowedArtist => "Unfollowed artist",
+        TextKey::NoticeSavedLibrary => "Saved to Your Library",
+        TextKey::NoticeEpisodePodcastUnavailable => "This episode's podcast is not on Spotify",
+        TextKey::NoticeSongAlbumUnavailable => "This song's album is not on Spotify",
+        TextKey::NoticeUnsupportedSpotifyLink => "Fastpotify cannot open this kind of Spotify link",
+        TextKey::NoticeNothingPlaying => "Nothing is playing. Pick something first",
+        TextKey::NoticeChooseDevice => "Choose a device, or enable playback on this computer",
+        TextKey::NoticePickSomething => "Pick something to play",
+        TextKey::NoticePickContext => "Pick a song, album, or playlist",
+        TextKey::NoticeLinkCopied => "Link copied",
+        TextKey::NoticeRestartingPlayback => "Restarting local playback",
+        TextKey::NoticeAudioDisconnected => {
+            "Spotify audio disconnected. Reconnecting local playback"
+        }
+        TextKey::NoticePremiumRequired => "Local playback needs Spotify Premium",
+        TextKey::NoticeOpeningPlaybackSetup => "Opening your browser to set up local playback",
+        TextKey::NoticeHistoryCleared => "Play history cleared",
+        TextKey::NoticePersonalAppNudge => {
+            "Spotify is taking a while. Set up a personal app in Settings for a separate API quota"
+        }
+        TextKey::NoticeSignInExpired => "Your Spotify sign-in expired. Please sign in again.",
+        TextKey::NoticeUpdateCheckFailedPrefix => "Couldn't check for updates",
+        TextKey::NoticeLocalPlaybackPrefix => "Local playback",
+        TextKey::NoticeProfileLoadFailedPrefix => "Couldn't load your profile",
+        TextKey::NoticeListDevicesFailedPrefix => "Couldn't list devices",
+        TextKey::NoticeLoadMorePlaylistsFailedPrefix => "Couldn't load more playlists",
+        TextKey::NoticeCreatePlaylistFailedPrefix => "Couldn't create the playlist",
+        TextKey::NoticeUpdatePlaylistFailedPrefix => "Couldn't update the playlist",
+        TextKey::NoticePlaylistChangeFailedPrefix => "Playlist change failed",
+        TextKey::NoticeLibraryUpdateFailedPrefix => "Couldn't update your library",
+        TextKey::NoticeCannotOpenSongPrefix => "Cannot open this song",
+        TextKey::NoticeCannotOpenEpisodePrefix => "Cannot open this episode",
+        TextKey::NoticeSwitchDeviceFailedPrefix => "Couldn't switch device",
+        TextKey::NoticeAddQueueFailedPrefix => "Couldn't add to queue",
+        TextKey::NoticeClearArtworkFailedPrefix => "Couldn't clear artwork",
+        TextKey::NoticeChooseDeviceHint => "Choose a device from the devices menu first.",
+        TextKey::NoticeRemoteStartFailed => "Couldn't start playback",
+        TextKey::NoticeRemotePauseFailed => "Couldn't pause",
+        TextKey::NoticeRemoteNextFailed => "Couldn't skip",
+        TextKey::NoticeRemotePreviousFailed => "Couldn't go back",
+        TextKey::NoticeRemoteSeekFailed => "Couldn't seek",
+        TextKey::NoticeRemoteVolumeFailed => "Couldn't change the volume",
+        TextKey::NoticeRemoteShuffleFailed => "Couldn't change shuffle",
+        TextKey::NoticeRemoteRepeatFailed => "Couldn't change repeat",
     }
 }
 
@@ -552,5 +616,49 @@ pub(super) fn message(message: &Message) -> String {
             1 => format!("1 song, {duration}"),
             count => format!("{} songs, {duration}", crate::util::format_count(*count)),
         },
+        Message::DurationHoursMinutes { hours, minutes } => format!("{hours} hr {minutes} min"),
+        Message::DurationMinutesSeconds { minutes, seconds } => {
+            format!("{minutes} min {seconds} sec")
+        }
+        Message::DurationSeconds { seconds } => format!("{seconds} sec"),
+        Message::EpisodeHoursMinutes { hours, minutes } => format!("{hours} hr {minutes} min"),
+        Message::EpisodeMinutes { minutes } => format!("{minutes} min"),
+        Message::DateDay { month, day, year } => format!("{month} {day}, {year}"),
+        Message::DateMonthYear { month, year } => format!("{month} {year}"),
+        Message::RelativeSeconds { count } => relative(*count, "second"),
+        Message::RelativeMinutes { count } => relative(*count, "minute"),
+        Message::RelativeHours { count } => relative(*count, "hour"),
+        Message::RelativeDays { count } => relative(*count, "day"),
+        Message::RelativeWeeks { count } => relative(*count, "week"),
+        Message::NoticeDetail { prefix, detail } => format!("{}: {detail}", text(*prefix)),
+        Message::NoticeReceiverReady { name } => format!("{name} is ready"),
+        Message::NoticeReceiverFailed { name, detail } => format!("{name}: {detail}"),
+        Message::NoticeUpdateAvailable { version } => format!("Fastpotify {version} is available"),
+        Message::NoticePlaylistCreated { name } => format!("Created {name}"),
+        Message::NoticeItemPlayNext { name } => format!("{name} will play next"),
+        Message::NoticeSongsPlayNext { count } => match count {
+            1 => "1 song will play next".to_string(),
+            count => format!("{count} songs will play next"),
+        },
+        Message::NoticeArtworkCleared { megabytes } => format!("Cleared {megabytes} MB of artwork"),
+        Message::NoticeRemoteActionFailed {
+            action,
+            detail,
+            choose_device,
+        } => {
+            if *choose_device {
+                format!(
+                    "{action}: {detail}. {}",
+                    text(TextKey::NoticeChooseDeviceHint)
+                )
+            } else {
+                format!("{action}: {detail}.")
+            }
+        }
     }
+}
+
+fn relative(count: i64, unit: &str) -> String {
+    let plural = if count == 1 { "" } else { "s" };
+    format!("{count} {unit}{plural} ago")
 }

@@ -1071,7 +1071,8 @@ fn track_row_contents(ui: &mut Ui, app: &mut App, row: TrackRow<'_>) -> Option<R
                 if let Some(added) = row.added_at.filter(|a| !a.starts_with("1970-01-01"))
                     && cols.added == 0.0
                 {
-                    let label = util::format_relative_date(added, jiff::Timestamp::now());
+                    let now = jiff::Timestamp::now();
+                    let label = util::format_relative_date_with(app.translator, added, now);
                     theme::text(
                         &mut child,
                         "•",
@@ -1079,7 +1080,7 @@ fn track_row_contents(ui: &mut Ui, app: &mut App, row: TrackRow<'_>) -> Option<R
                         palette.secondary.gamma_multiply(0.6),
                     );
                     theme::text(&mut child, &label, theme::regular(12.0), palette.secondary);
-                    if label.ends_with(" ago") {
+                    if util::relative_date_is_live(added, now) {
                         ui.ctx()
                             .request_repaint_after(std::time::Duration::from_secs(1));
                     }
@@ -1116,9 +1117,10 @@ fn track_row_contents(ui: &mut Ui, app: &mut App, row: TrackRow<'_>) -> Option<R
                         theme::regular(12.0),
                         palette.secondary.gamma_multiply(0.6),
                     );
-                    let label = util::format_relative_date(added, jiff::Timestamp::now());
+                    let now = jiff::Timestamp::now();
+                    let label = util::format_relative_date_with(app.translator, added, now);
                     theme::text(&mut child, &label, theme::regular(12.0), palette.secondary);
-                    if label.ends_with(" ago") {
+                    if util::relative_date_is_live(added, now) {
                         ui.ctx()
                             .request_repaint_after(std::time::Duration::from_secs(1));
                     }
@@ -1163,9 +1165,10 @@ fn track_row_contents(ui: &mut Ui, app: &mut App, row: TrackRow<'_>) -> Option<R
                             theme::regular(12.0),
                             palette.secondary.gamma_multiply(0.6),
                         );
-                        let label = util::format_relative_date(added, jiff::Timestamp::now());
+                        let now = jiff::Timestamp::now();
+                        let label = util::format_relative_date_with(app.translator, added, now);
                         theme::text(ui, &label, theme::regular(12.0), palette.secondary);
-                        if label.ends_with(" ago") {
+                        if util::relative_date_is_live(added, now) {
                             ui.ctx()
                                 .request_repaint_after(std::time::Duration::from_secs(1));
                         }
@@ -1193,9 +1196,10 @@ fn track_row_contents(ui: &mut Ui, app: &mut App, row: TrackRow<'_>) -> Option<R
                             theme::regular(12.0),
                             palette.secondary.gamma_multiply(0.6),
                         );
-                        let label = util::format_relative_date(added, jiff::Timestamp::now());
+                        let now = jiff::Timestamp::now();
+                        let label = util::format_relative_date_with(app.translator, added, now);
                         theme::text(ui, &label, theme::regular(12.0), palette.secondary);
-                        if label.ends_with(" ago") {
+                        if util::relative_date_is_live(added, now) {
                             ui.ctx()
                                 .request_repaint_after(std::time::Duration::from_secs(1));
                         }
@@ -1263,7 +1267,8 @@ fn track_row_contents(ui: &mut Ui, app: &mut App, row: TrackRow<'_>) -> Option<R
             .filter(|added| !added.starts_with("1970-01-01"))
         {
             let cell = Rect::from_min_size(pos2(x, rect.top()), vec2(cols.added, row_height));
-            let label = util::format_relative_date(added, jiff::Timestamp::now());
+            let now = jiff::Timestamp::now();
+            let label = util::format_relative_date_with(app.translator, added, now);
             painter.text(
                 pos2(cell.left(), cell.center().y),
                 egui::Align2::LEFT_CENTER,
@@ -1273,7 +1278,7 @@ fn track_row_contents(ui: &mut Ui, app: &mut App, row: TrackRow<'_>) -> Option<R
             );
             // Relative labels cross a boundary while the table is idle, so
             // keep the visible value in step with the clock.
-            if label.ends_with(" ago") {
+            if util::relative_date_is_live(added, now) {
                 ui.ctx()
                     .request_repaint_after(std::time::Duration::from_secs(1));
             }

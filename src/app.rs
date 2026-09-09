@@ -15,7 +15,7 @@ use crate::backend::{
     ApiRequest, ApiResponse, AuthStatus, Backend, Command, Event, LocalPlayback, LyricsRequest,
     PLAYLIST_PAGE_SIZE, RecentsFor, RemoteAction, Waker,
 };
-use crate::i18n::Translator;
+use crate::i18n::{Message, TextKey, Translator};
 use crate::media::{MediaCommand, MediaState, MediaTrack};
 use crate::media_controls::MediaService;
 use crate::model::QueueTab;
@@ -43,8 +43,6 @@ const TOAST_LIFETIME: Duration = Duration::from_millis(3200);
 const TOAST_FRAME: Duration = Duration::from_millis(33);
 const PERSONAL_APP_NUDGE_AFTER: Duration = Duration::from_secs(5);
 const PERSONAL_APP_NUDGE_INTERVAL: jiff::SignedDuration = jiff::SignedDuration::from_hours(24);
-const PERSONAL_APP_NUDGE: &str =
-    "Spotify is taking a while. Set up a personal app in Settings for a separate API quota";
 const OPTIMISTIC_HOLD: Duration = Duration::from_millis(2500);
 
 /// How long a newly started context remains visible while Spotify catches up.
@@ -1276,13 +1274,16 @@ impl App {
                     self.activating_receiver = None;
                     match result {
                         Ok(()) => {
-                            self.toast(format!("{name} is ready"));
+                            self.toast_message(Message::NoticeReceiverReady { name: name.clone() });
                             // It takes a moment to appear in the device list.
                             self.pending_transfer_to = Some((name, Instant::now()));
                             self.devices_fetched_at = None;
                             self.refresh_devices();
                         }
-                        Err(error) => self.toast_error(format!("{name}: {error}")),
+                        Err(error) => self.toast_error_message(Message::NoticeReceiverFailed {
+                            name,
+                            detail: error.to_string(),
+                        }),
                     }
                 }
                 Event::Local(state) => self.handle_local(*state),
@@ -1350,20 +1351,25 @@ impl App {
                     match result {
                         Ok(Some(notice)) => {
                             if manual || self.update.as_ref() != Some(&notice) {
-                                self.toast(format!("Fastpotify {} is available", notice.version));
+                                self.toast_message(Message::NoticeUpdateAvailable {
+                                    version: notice.version.clone(),
+                                });
                             }
                             self.update = Some(notice);
                         }
                         Ok(None) => {
                             self.update = None;
                             if manual {
-                                self.toast("Fastpotify is up to date");
+                                self.toast_text(TextKey::NoticeUpToDate);
                             } else {
                                 log::debug!("this is the newest release");
                             }
                         }
                         Err(error) if manual => {
-                            self.toast_error(format!("Couldn't check for updates: {error}"));
+                            self.toast_detail_error(
+                                TextKey::NoticeUpdateCheckFailedPrefix,
+                                error.to_string(),
+                            );
                         }
                         Err(error) => {
                             log::debug!("could not check for a newer release: {error}");
@@ -1427,7 +1433,7 @@ impl App {
                 if self.queued_play.take().is_some() {
                     self.clear_play_pending();
                 }
-                self.toast_error(format!("Local playback: {message}"));
+                self.toast_detail_error(TextKey::NoticeLocalPlaybackPrefix, message.clone());
             }
             LocalPlayback::Authorizing | LocalPlayback::Connecting => {}
         }
@@ -1557,7 +1563,7 @@ impl App {
                     self.unavailable_at.clear();
                     self.last_unavailable_reconnect = Some(now);
                     self.backend.send(Command::Reconnect);
-                    self.toast("Spotify audio disconnected. Reconnecting local playback");
+                    self.toast_text(TextKey::NoticeAudioDisconnected);
                 }
             }
         }
@@ -3049,7 +3055,7 @@ impl App {
         self.backend.player(PlayerCommand::ClearQueue);
         // Refresh to remove queued tracks added by another client.
         self.queue_recheck_at = Some(Instant::now() + QUEUE_RECHECK);
-        self.toast("Queue cleared");
+        self.toast_text(TextKey::NoticeQueueCleared);
     }
 
     /// Current and upcoming track URIs, deduplicated in playback order.
@@ -3249,10 +3255,15 @@ impl App {
                 Err(error) => {
                     if matches!(error, crate::api::ApiError::SignInExpired { .. }) {
                         self.auth = AuthStatus::Failed(
-                            "Your Spotify sign-in expired. Please sign in again.".into(),
+                            self.translator
+                                .text(TextKey::NoticeSignInExpired)
+                                .to_string(),
                         );
                     } else {
-                        self.toast_error(format!("Couldn't load your profile: {error}"));
+                        self.toast_detail_error(
+                            TextKey::NoticeProfileLoadFailedPrefix,
+                            error.to_string(),
+                        );
                     }
                 }
             },
@@ -3287,7 +3298,10 @@ impl App {
                             self.selected_device = None;
                         }
                     }
-                    Err(error) => self.toast_error(format!("Couldn't list devices: {error}")),
+                    Err(error) => self.toast_detail_error(
+                        TextKey::NoticeListDevicesFailedPrefix,
+                        error.to_string(),
+                    ),
                 }
             }
             ApiResponse::PlaybackState { seq, result } => {
@@ -3576,7 +3590,10 @@ impl App {
                     if offset == 0 {
                         self.library.playlists = Loadable::Failed(error.to_string());
                     } else {
-                        self.toast_error(format!("Couldn't load more playlists: {error}"));
+                        self.toast_detail_error(
+                            TextKey::NoticeLoadMorePlaylistsFailedPrefix,
+                            error.to_string(),
+                        );
                     }
                 }
             },
@@ -3741,7 +3758,9 @@ impl App {
                 self.playlist_busy = false;
                 match result {
                     Ok(playlist) => {
-                        self.toast(format!("Created {}", playlist.name));
+                        self.toast_message(Message::NoticePlaylistCreated {
+                            name: playlist.name.clone(),
+                        });
                         if let Some(playlists) = self.library.playlists.get_mut() {
                             playlists.insert(0, playlist.clone());
                         }
@@ -3757,25 +3776,27 @@ impl App {
                         }
                         self.open(Page::Playlist(playlist.id));
                     }
-                    Err(error) => {
-                        self.toast_error(format!("Couldn't create the playlist: {error}"))
-                    }
+                    Err(error) => self.toast_detail_error(
+                        TextKey::NoticeCreatePlaylistFailedPrefix,
+                        error.to_string(),
+                    ),
                 }
             }
             ApiResponse::PlaylistUpdated { id, result } => {
                 self.playlist_busy = false;
                 match result {
                     Ok(()) => {
-                        self.toast("Playlist updated");
+                        self.toast_text(TextKey::NoticePlaylistUpdated);
                         self.playlist_pages.remove(&id);
                         self.load_playlists();
                         if matches!(self.page(), Page::Playlist(current) if *current == id) {
                             self.ensure_loaded(Page::Playlist(id));
                         }
                     }
-                    Err(error) => {
-                        self.toast_error(format!("Couldn't update the playlist: {error}"))
-                    }
+                    Err(error) => self.toast_detail_error(
+                        TextKey::NoticeUpdatePlaylistFailedPrefix,
+                        error.to_string(),
+                    ),
                 }
             }
             ApiResponse::PlaylistDuplicatesChecked {
@@ -3839,7 +3860,10 @@ impl App {
                         }
                     }
                     Err(error) => {
-                        self.toast_error(format!("Playlist change failed: {error}"));
+                        self.toast_detail_error(
+                            TextKey::NoticePlaylistChangeFailedPrefix,
+                            error.to_string(),
+                        );
                         if let Some(page) = self.playlist_pages.get_mut(&id) {
                             page.optimistic_snapshot = None;
                             page.snapshot_rechecks = 0;
@@ -3862,10 +3886,10 @@ impl App {
                 Ok(()) => {
                     self.saved
                         .insert(format!("spotify:playlist:{id}"), followed);
-                    self.toast(if followed {
-                        "Added to Your Library"
+                    self.toast_text(if followed {
+                        TextKey::NoticeAddedLibrary
                     } else {
-                        "Removed from Your Library"
+                        TextKey::NoticeRemovedLibrary
                     });
                     self.load_playlists();
                     if !followed && matches!(self.page(), Page::Playlist(current) if *current == id)
@@ -3876,7 +3900,10 @@ impl App {
                 Err(error) => {
                     self.saved
                         .insert(format!("spotify:playlist:{id}"), !followed);
-                    self.toast_error(format!("Couldn't update the playlist: {error}"));
+                    self.toast_detail_error(
+                        TextKey::NoticeUpdatePlaylistFailedPrefix,
+                        error.to_string(),
+                    );
                 }
             },
             ApiResponse::SavedTracks { offset, result } => {
@@ -4005,15 +4032,15 @@ impl App {
                             current_uris.first().and_then(|uri| util::uri_kind(uri)),
                             saved,
                         ) {
-                            (Some("track"), true) => "Added to Liked Songs",
-                            (Some("track"), false) => "Removed from Liked Songs",
-                            (Some("artist"), true) => "Following artist",
-                            (Some("artist"), false) => "Unfollowed artist",
-                            (_, true) => "Saved to Your Library",
-                            (_, false) => "Removed from Your Library",
+                            (Some("track"), true) => TextKey::NoticeAddedLikedSongs,
+                            (Some("track"), false) => TextKey::NoticeRemovedLikedSongs,
+                            (Some("artist"), true) => TextKey::NoticeFollowingArtist,
+                            (Some("artist"), false) => TextKey::NoticeUnfollowedArtist,
+                            (_, true) => TextKey::NoticeSavedLibrary,
+                            (_, false) => TextKey::NoticeRemovedLibrary,
                         };
                         if !current_uris.is_empty() {
-                            self.toast(message);
+                            self.toast_text(message);
                         }
                     }
                     Err(error) => {
@@ -4021,7 +4048,10 @@ impl App {
                             self.set_saved_state(uri.clone(), !saved);
                         }
                         if !current_uris.is_empty() {
-                            self.toast_error(format!("Couldn't update your library: {error}"));
+                            self.toast_detail_error(
+                                TextKey::NoticeLibraryUpdateFailedPrefix,
+                                error.to_string(),
+                            );
                         }
                     }
                 }
@@ -4189,7 +4219,10 @@ impl App {
                             == Some(format!("spotify:track:{id}").as_str())
                         {
                             self.pending_link = None;
-                            self.toast_error(format!("Cannot open this song: {error}"));
+                            self.toast_detail_error(
+                                TextKey::NoticeCannotOpenSongPrefix,
+                                error.to_string(),
+                            );
                         }
                     }
                 }
@@ -4199,9 +4232,10 @@ impl App {
             ApiResponse::Episode { result, .. } => match result {
                 Ok(episode) => match episode.show.filter(|show| !show.id.is_empty()) {
                     Some(show) => self.open(Page::Show(show.id)),
-                    None => self.toast_error("This episode's podcast is not on Spotify"),
+                    None => self.toast_error_text(TextKey::NoticeEpisodePodcastUnavailable),
                 },
-                Err(error) => self.toast_error(format!("Cannot open this episode: {error}")),
+                Err(error) => self
+                    .toast_detail_error(TextKey::NoticeCannotOpenEpisodePrefix, error.to_string()),
             },
             ApiResponse::Remote { action, result } => {
                 if matches!(action, RemoteAction::Play | RemoteAction::Pause) {
@@ -4223,15 +4257,14 @@ impl App {
                         }) {
                             self.intent_track = None;
                         }
-                        let hint = if error.status() == Some(404) {
-                            " Choose a device from the devices menu first."
-                        } else {
-                            ""
-                        };
-                        self.toast_error(format!(
-                            "{}: {error}.{hint}",
-                            remote_action_label(action)
-                        ));
+                        self.toast_error_message(Message::NoticeRemoteActionFailed {
+                            action: self
+                                .translator
+                                .text(remote_action_text_key(action))
+                                .to_string(),
+                            detail: error.to_string(),
+                            choose_device: error.status() == Some(404),
+                        });
                     }
                 }
                 self.poll_remote_soon();
@@ -4243,14 +4276,17 @@ impl App {
                     self.poll_remote_soon();
                     self.refresh_devices();
                 }
-                Err(error) => self.toast_error(format!("Couldn't switch device: {error}")),
+                Err(error) => self
+                    .toast_detail_error(TextKey::NoticeSwitchDeviceFailedPrefix, error.to_string()),
             },
             ApiResponse::QueueAdded { label: _, result } => match result {
                 Ok(()) => {
                     // Refresh the queue after the optimistic update.
                     self.refresh_queue(true);
                 }
-                Err(error) => self.toast_error(format!("Couldn't add to queue: {error}")),
+                Err(error) => {
+                    self.toast_detail_error(TextKey::NoticeAddQueueFailedPrefix, error.to_string())
+                }
             },
         }
     }
@@ -4312,7 +4348,7 @@ impl App {
                         .filter(|id| !id.is_empty());
                     match album {
                         Some(album) => self.open(Page::Album(album)),
-                        None => self.toast_error("This song's album is not on Spotify"),
+                        None => self.toast_error_text(TextKey::NoticeSongAlbumUnavailable),
                     }
                 } else if self.track_requests.insert(id.clone()) {
                     // The answer lands in the cache, and the link waits
@@ -4326,7 +4362,7 @@ impl App {
             }
             _ => {
                 self.pending_link = None;
-                self.toast_error("Fastpotify cannot open this kind of Spotify link");
+                self.toast_error_text(TextKey::NoticeUnsupportedSpotifyLink);
             }
         }
     }
@@ -4345,7 +4381,7 @@ impl App {
         if device_id.is_none() && self.remote_fresh().is_none() {
             // Spotify would only answer "no active device found".
             self.clear_play_pending();
-            self.toast("Nothing is playing. Pick something first");
+            self.toast_text(TextKey::NoticeNothingPlaying);
             return;
         }
         self.backend.api(ApiRequest::Remote {
@@ -4634,7 +4670,7 @@ impl App {
                 } else {
                     self.clear_play_pending();
                     self.queued_play = None;
-                    self.toast("Choose a device, or enable playback on this computer");
+                    self.toast_text(TextKey::NoticeChooseDevice);
                     self.show_devices = true;
                     self.refresh_devices();
                 }
@@ -4829,12 +4865,12 @@ impl App {
                         return;
                     }
                     if !self.resume_last() {
-                        self.toast("Pick something to play");
+                        self.toast_text(TextKey::NoticePickSomething);
                     }
                     return;
                 } else {
                     if !self.resume_last() {
-                        self.toast("Pick something to play");
+                        self.toast_text(TextKey::NoticePickSomething);
                     }
                     return;
                 }
@@ -4846,7 +4882,7 @@ impl App {
                     // pick up where the last run left off, the way the
                     // local branch does. The engine plays it once it is up.
                     if !self.resume_last() {
-                        self.toast("Pick a song, album, or playlist");
+                        self.toast_text(TextKey::NoticePickContext);
                     }
                     return;
                 }
@@ -5068,7 +5104,9 @@ impl App {
         }
         self.session_dirty = true;
         if announce {
-            self.toast(format!("{label} will play next"));
+            self.toast_message(Message::NoticeItemPlayNext {
+                name: label.clone(),
+            });
         }
         // Queue tracks and episodes directly on the active local engine.
         // Other targets and item types use the Web API.
@@ -5497,10 +5535,7 @@ impl App {
                 for (uri, label) in songs {
                     self.queue_one(uri, label, false);
                 }
-                self.toast(match count {
-                    1 => "1 song will play next".to_string(),
-                    count => format!("{count} songs will play next"),
-                });
+                self.toast_message(Message::NoticeSongsPlayNext { count });
             }
             Action::SetSavedMany { uris, saved } => {
                 for uri in &uris {
@@ -5663,7 +5698,7 @@ impl App {
             Action::CopyLink(uri) => {
                 if let Some(url) = util::open_spotify_url(&uri) {
                     ctx.copy_text(url);
-                    self.toast("Link copied");
+                    self.toast_text(TextKey::NoticeLinkCopied);
                 }
             }
             Action::OpenInSpotify(uri) => {
@@ -5797,7 +5832,7 @@ impl App {
                 );
                 self.backend.send(Command::RestartEngine(config));
                 if self.local_ready {
-                    self.toast("Restarting local playback");
+                    self.toast_text(TextKey::NoticeRestartingPlayback);
                 }
             }
             Action::ShowWindow => {
@@ -5826,7 +5861,7 @@ impl App {
                     .and_then(|user| user.product.as_deref())
                     .is_some_and(|product| product != "premium");
                 if free {
-                    self.toast_error("Local playback needs Spotify Premium");
+                    self.toast_error_text(TextKey::NoticePremiumRequired);
                 } else if !self.local_ready
                     && !matches!(
                         self.local_playback,
@@ -5836,7 +5871,7 @@ impl App {
                     self.settings.playback_authorized = true;
                     self.settings_dirty = true;
                     self.backend.send(Command::AuthorizePlayback);
-                    self.toast("Opening your browser to set up local playback");
+                    self.toast_text(TextKey::NoticeOpeningPlaybackSetup);
                 }
             }
             Action::OpenUrl(url) => {
@@ -5852,7 +5887,7 @@ impl App {
                 self.plays.clear();
                 self.plays.save(&self.dirs.history_file());
                 self.rebuild_recents();
-                self.toast("Play history cleared".to_string());
+                self.toast_text(TextKey::NoticeHistoryCleared);
             }
             Action::ClearArtCache => match self.backend.art().clear_disk_cache() {
                 Ok(bytes) => {
@@ -5861,12 +5896,12 @@ impl App {
                     // deleted; forget it, or the next sync hands the system
                     // a file that is no longer there.
                     self.media_art = None;
-                    self.toast(format!(
-                        "Cleared {:.1} MB of artwork",
-                        bytes as f64 / 1_048_576.0
-                    ));
+                    self.toast_message(Message::NoticeArtworkCleared {
+                        megabytes: format!("{:.1}", bytes as f64 / 1_048_576.0),
+                    });
                 }
-                Err(error) => self.toast_error(format!("Couldn't clear artwork: {error}")),
+                Err(error) => self
+                    .toast_detail_error(TextKey::NoticeClearArtworkFailedPrefix, error.to_string()),
             },
             Action::ToggleWinampWindow => {
                 // One window at a time: this one closes and the loop in
@@ -6037,6 +6072,26 @@ impl App {
         self.toasts.truncate(4);
     }
 
+    fn toast_text(&mut self, key: TextKey) {
+        self.toast(self.translator.text(key));
+    }
+
+    fn toast_message(&mut self, message: Message) {
+        self.toast(self.translator.message(&message));
+    }
+
+    fn toast_error_text(&mut self, key: TextKey) {
+        self.toast_error(self.translator.text(key));
+    }
+
+    fn toast_error_message(&mut self, message: Message) {
+        self.toast_error(self.translator.message(&message));
+    }
+
+    fn toast_detail_error(&mut self, prefix: TextKey, detail: String) {
+        self.toast_error_message(Message::NoticeDetail { prefix, detail });
+    }
+
     pub fn toast_error(&mut self, message: impl Into<String>) {
         let message = message.into();
         log::warn!("{message}");
@@ -6067,7 +6122,7 @@ impl App {
         }
         self.settings.personal_app_nudge_at = Some(now.to_string());
         self.settings_dirty = true;
-        self.toast(PERSONAL_APP_NUDGE);
+        self.toast_text(TextKey::NoticePersonalAppNudge);
     }
 
     /// Selected row indices for `page`.
@@ -6604,16 +6659,16 @@ fn page_related_needs_load(pages: &HashMap<String, ArtistPage>, id: &str) -> boo
     pages.get(id).is_some_and(|page| page.related.needs_load())
 }
 
-fn remote_action_label(action: RemoteAction) -> &'static str {
+fn remote_action_text_key(action: RemoteAction) -> TextKey {
     match action {
-        RemoteAction::Play => "Couldn't start playback",
-        RemoteAction::Pause => "Couldn't pause",
-        RemoteAction::Next => "Couldn't skip",
-        RemoteAction::Previous => "Couldn't go back",
-        RemoteAction::Seek => "Couldn't seek",
-        RemoteAction::Volume => "Couldn't change the volume",
-        RemoteAction::Shuffle => "Couldn't change shuffle",
-        RemoteAction::Repeat => "Couldn't change repeat",
+        RemoteAction::Play => TextKey::NoticeRemoteStartFailed,
+        RemoteAction::Pause => TextKey::NoticeRemotePauseFailed,
+        RemoteAction::Next => TextKey::NoticeRemoteNextFailed,
+        RemoteAction::Previous => TextKey::NoticeRemotePreviousFailed,
+        RemoteAction::Seek => TextKey::NoticeRemoteSeekFailed,
+        RemoteAction::Volume => TextKey::NoticeRemoteVolumeFailed,
+        RemoteAction::Shuffle => TextKey::NoticeRemoteShuffleFailed,
+        RemoteAction::Repeat => TextKey::NoticeRemoteRepeatFailed,
     }
 }
 
@@ -7928,6 +7983,43 @@ mod tests {
     }
 
     #[test]
+    fn notices_resolve_with_the_applied_language_and_keep_external_values() {
+        let mut app = test_app_with_settings(
+            "translated-notices",
+            Settings {
+                language: crate::settings::LanguageChoice::Spanish,
+                ..Settings::default()
+            },
+        );
+
+        let playlist_notice = Message::NoticePlaylistCreated {
+            name: "Viaje de Ana".into(),
+        };
+        let library_error = Message::NoticeDetail {
+            prefix: TextKey::NoticeLibraryUpdateFailedPrefix,
+            detail: "HTTP 429 request-id=abc".into(),
+        };
+        let expected_playlist_notice = app.translator.message(&playlist_notice);
+        let expected_library_error = app.translator.message(&library_error);
+
+        app.toast_message(playlist_notice);
+        app.toast_detail_error(
+            TextKey::NoticeLibraryUpdateFailedPrefix,
+            "HTTP 429 request-id=abc".into(),
+        );
+        assert_eq!(app.toasts[0].message, expected_playlist_notice);
+        assert_eq!(app.toasts[1].message, expected_library_error);
+        assert!(app.toasts[0].message.contains("Viaje de Ana"));
+        assert!(app.toasts[1].message.contains("HTTP 429 request-id=abc"));
+        for count in [0, 1, 3] {
+            let message = app
+                .translator
+                .message(&Message::NoticeSongsPlayNext { count });
+            assert!(message.contains(&count.to_string()));
+        }
+    }
+
+    #[test]
     fn slow_spotify_suggests_a_personal_app_once_a_day() {
         let mut app = test_app("personal-app-nudge");
         app.auth = AuthStatus::Connected {
@@ -7940,7 +8032,10 @@ mod tests {
 
         app.maybe_suggest_personal_app(true, now);
         assert_eq!(app.toasts.len(), 1);
-        assert_eq!(app.toasts[0].message, PERSONAL_APP_NUDGE);
+        assert_eq!(
+            app.toasts[0].message,
+            app.translator.text(TextKey::NoticePersonalAppNudge)
+        );
         assert_eq!(
             app.settings.personal_app_nudge_at.as_deref(),
             Some("2026-09-03T15:00:00Z")

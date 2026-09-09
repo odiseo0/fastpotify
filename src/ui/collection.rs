@@ -915,7 +915,10 @@ pub fn playlist(app: &mut App, ui: &mut egui::Ui, id: &str) {
                 app.translator
                     .message(&Message::CollectionSongCountDuration {
                         count: count as u64,
-                        duration: util::format_total_ms(total_duration(&items)),
+                        duration: util::format_total_ms_with(
+                            app.translator,
+                            total_duration(&items),
+                        ),
                     })
             } else {
                 app.translator.message(&Message::CollectionSongCount {
@@ -1123,7 +1126,7 @@ pub fn album(app: &mut App, ui: &mut egui::Ui, id: &str) {
             if let Some(date) = &album.release_date {
                 theme::text(
                     ui,
-                    util::format_date(date),
+                    util::format_date_with(app.translator, date),
                     theme::regular(12.5),
                     palette.secondary,
                 );
@@ -1195,7 +1198,7 @@ fn album_hero(
         app.translator
             .message(&Message::CollectionSongCountDuration {
                 count: count as u64,
-                duration: util::format_total_ms(duration),
+                duration: util::format_total_ms_with(app.translator, duration),
             })
     } else {
         app.translator.message(&Message::CollectionSongCount {
@@ -1251,7 +1254,7 @@ pub fn liked(app: &mut App, ui: &mut egui::Ui) {
         app.translator
             .message(&Message::CollectionSongCountDuration {
                 count: total as u64,
-                duration: util::format_total_ms(total_duration(&items)),
+                duration: util::format_total_ms_with(app.translator, total_duration(&items)),
             })
     } else {
         app.translator.message(&Message::CollectionSongCount {
