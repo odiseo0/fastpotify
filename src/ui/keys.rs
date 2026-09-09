@@ -3,6 +3,7 @@
 use egui::{Key, Modifiers};
 
 use crate::app::App;
+use crate::i18n::{TextKey, Translator};
 use crate::model::{Action, Dialog, Page};
 
 pub(super) const fn platform_shortcut(ctrl: &'static str, cmd: &'static str) -> &'static str {
@@ -163,58 +164,79 @@ pub fn handle(app: &mut App, ctx: &egui::Context) {
     }
 }
 
-pub const SHORTCUTS: &[(&str, &str)] = &[
-    ("Space", "Play or pause"),
+const SHORTCUTS: &[(&str, TextKey)] = &[
+    ("Space", TextKey::ShortcutPlayPause),
     (
         platform_shortcut("Ctrl+←  /  Ctrl+→", "Cmd+←  /  Cmd+→"),
-        "Previous or next",
+        TextKey::ShortcutPreviousNext,
     ),
-    ("Shift+←  /  Shift+→", "Seek 10 seconds"),
+    ("Shift+←  /  Shift+→", TextKey::ShortcutSeek),
     (
         platform_shortcut("Ctrl+↑  /  Ctrl+↓", "Cmd+↑  /  Cmd+↓"),
-        "Volume up or down",
+        TextKey::ShortcutVolume,
     ),
-    ("M", "Mute or unmute"),
-    ("B", "Like or unlike the playing song"),
-    ("S", "Toggle shuffle"),
-    ("R", "Cycle repeat"),
-    ("Q", "Show the queue"),
-    ("L", "Show the lyrics"),
-    (platform_shortcut("Ctrl+F  or  /", "Cmd+F  or  /"), "Search"),
-    (SIDEBAR_SHORTCUT, "Show or hide the sidebar"),
-    ("Alt+←  /  Alt+→", "Back or forward"),
-    (platform_shortcut("Ctrl+H", "Cmd+Shift+H"), "Home"),
-    (platform_shortcut("Ctrl+L", "Cmd+L"), "Liked Songs"),
+    ("M", TextKey::ShortcutMute),
+    ("B", TextKey::ShortcutLikePlaying),
+    ("S", TextKey::ShortcutShuffle),
+    ("R", TextKey::ShortcutRepeat),
+    ("Q", TextKey::ShortcutQueue),
+    ("L", TextKey::ShortcutLyrics),
+    (
+        platform_shortcut("Ctrl+F  or  /", "Cmd+F  or  /"),
+        TextKey::ShortcutSearch,
+    ),
+    (SIDEBAR_SHORTCUT, TextKey::ShortcutSidebar),
+    ("Alt+←  /  Alt+→", TextKey::ShortcutBackForward),
+    (
+        platform_shortcut("Ctrl+H", "Cmd+Shift+H"),
+        TextKey::ShortcutHome,
+    ),
+    (
+        platform_shortcut("Ctrl+L", "Cmd+L"),
+        TextKey::ShortcutLikedSongs,
+    ),
     (
         platform_shortcut("Ctrl+Shift+A", "Cmd+Shift+A"),
-        "Go to the playing artist",
+        TextKey::ShortcutPlayingArtist,
     ),
     (
         platform_shortcut("Ctrl+Shift+B", "Cmd+Shift+B"),
-        "Go to the playing album",
+        TextKey::ShortcutPlayingAlbum,
     ),
-    (WINAMP_SHORTCUT, "Winamp mini player"),
-    (MILKDROP_SHORTCUT, "MilkDrop, under the mini player"),
-    ("F  or  double-click", "MilkDrop: fill the screen"),
-    ("→  /  N", "MilkDrop: next preset"),
-    ("←  /  P", "MilkDrop: previous preset"),
-    ("L", "MilkDrop: keep this preset"),
-    ("Esc", "MilkDrop: leave full screen, or close"),
-    (platform_shortcut("Ctrl+,", "Cmd+,"), "Settings"),
+    (WINAMP_SHORTCUT, TextKey::ShortcutWinamp),
+    (MILKDROP_SHORTCUT, TextKey::ShortcutMilkdrop),
+    ("F  or  double-click", TextKey::ShortcutMilkdropFullscreen),
+    ("→  /  N", TextKey::ShortcutMilkdropNext),
+    ("←  /  P", TextKey::ShortcutMilkdropPrevious),
+    ("L", TextKey::ShortcutMilkdropKeep),
+    ("Esc", TextKey::ShortcutMilkdropClose),
+    (
+        platform_shortcut("Ctrl+,", "Cmd+,"),
+        TextKey::ShortcutSettings,
+    ),
     (
         platform_shortcut("Ctrl+/ or ?", "Cmd+/ or ?"),
-        "Keyboard shortcuts",
+        TextKey::ShortcutHelp,
     ),
-    (platform_shortcut("Ctrl+W", "Cmd+W"), "Close the window"),
-    (QUIT_SHORTCUT, "Quit"),
+    (
+        platform_shortcut("Ctrl+W", "Cmd+W"),
+        TextKey::ShortcutCloseWindow,
+    ),
+    (QUIT_SHORTCUT, TextKey::ShortcutQuit),
 ];
+
+pub fn shortcuts(translator: Translator) -> impl Iterator<Item = (&'static str, &'static str)> {
+    SHORTCUTS
+        .iter()
+        .map(move |(keys, description)| (*keys, translator.text(*description)))
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::app::AppOptions;
     use crate::paths::AppDirs;
-    use crate::settings::Settings;
+    use crate::settings::{LanguageChoice, Settings};
 
     #[test]
     fn shortcut_constants_name_the_platform_modifier() {
@@ -241,18 +263,18 @@ mod tests {
         } else {
             "Cmd+"
         };
-        for (keys, _) in SHORTCUTS {
+        for (keys, _) in shortcuts(Translator::new(crate::settings::LanguageChoice::English)) {
             assert!(!keys.contains(other), "wrong modifier in {keys}");
         }
     }
 
     #[test]
     fn shortcut_dialog_names_platform_reserved_alternatives() {
+        let translator = Translator::new(crate::settings::LanguageChoice::English);
         let label = |description| {
-            SHORTCUTS
-                .iter()
+            shortcuts(translator)
                 .find(|(_, candidate)| *candidate == description)
-                .map(|(keys, _)| *keys)
+                .map(|(keys, _)| keys)
                 .unwrap()
         };
         if cfg!(target_os = "macos") {
@@ -262,6 +284,26 @@ mod tests {
             assert_eq!(label("Home"), "Ctrl+H");
             assert_eq!(label("Winamp mini player"), "Ctrl+M");
         }
+    }
+
+    #[test]
+    fn shortcut_descriptions_use_the_selected_catalogue() {
+        let english: Vec<_> = shortcuts(Translator::new(LanguageChoice::English)).collect();
+        let spanish: Vec<_> = shortcuts(Translator::new(LanguageChoice::Spanish)).collect();
+
+        assert_eq!(english.len(), spanish.len());
+        assert_eq!(english[0], ("Space", "Play or pause"));
+        assert_eq!(spanish[0].0, "Space");
+        assert_eq!(
+            spanish[0].1,
+            Translator::new(LanguageChoice::Spanish).text(TextKey::ShortcutPlayPause)
+        );
+        assert!(
+            english
+                .iter()
+                .zip(&spanish)
+                .all(|((english_keys, _), (spanish_keys, _))| english_keys == spanish_keys)
+        );
     }
 
     #[test]
