@@ -370,7 +370,6 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::CollectionTopSongsDetail => "Your most-played tracks from the last four weeks.",
         TextKey::CollectionCollaborativePlaylist => "Collaborative Playlist",
         TextKey::CollectionPublicPlaylist => "Public Playlist",
-        TextKey::CollectionSaveLibrary => "Save to Your Library",
         TextKey::ShortcutPlayPause => "Play or pause",
         TextKey::ShortcutPreviousNext => "Previous or next",
         TextKey::ShortcutSeek => "Seek 10 seconds",
@@ -399,6 +398,22 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::ShortcutHelp => "Keyboard shortcuts",
         TextKey::ShortcutCloseWindow => "Close the window",
         TextKey::ShortcutQuit => "Quit",
+        TextKey::MenuSelectionRemoveLiked => "Remove from Liked Songs",
+        TextKey::MenuSelectionSaveLiked => "Save to Liked Songs",
+        TextKey::MenuTrackRemoveLiked => "Remove from Liked Songs",
+        TextKey::MenuTrackSaveLiked => "Save to Liked Songs",
+        TextKey::TrackRowRemoveLiked => "Remove from Liked Songs",
+        TextKey::TrackRowSaveLiked => "Save to Liked Songs",
+        TextKey::TrackRowMore => "More",
+        TextKey::CollectionStarting => "Starting…",
+        TextKey::CollectionPlay => "Play",
+        TextKey::CollectionPause => "Pause",
+        TextKey::CollectionPlaylistKind => "Playlist",
+        TextKey::CollectionLikedSongs => "Liked Songs",
+        TextKey::CollectionPlaylistAddLibrary => "Add to Your Library",
+        TextKey::CollectionPlaylistRemoveLibrary => "Remove from Your Library",
+        TextKey::CollectionAlbumSaveLibrary => "Save to Your Library",
+        TextKey::CollectionAlbumRemoveLibrary => "Remove from Your Library",
     }
 }
 
@@ -499,5 +514,20 @@ pub(super) fn message(message: &Message) -> String {
             count => format!("Playlist • {count} songs"),
         },
         Message::SortBy { label } => format!("Sort by {label}"),
+        Message::CollectionNamedContributors { names } => {
+            format!("with {}", names.join(" and "))
+        }
+        Message::CollectionOtherContributors { count } => match count {
+            1 => "and 1 other".to_string(),
+            count => format!("and {count} others"),
+        },
+        Message::CollectionSongCount { count } => match count {
+            1 => "1 song".to_string(),
+            count => format!("{} songs", crate::util::format_count(*count)),
+        },
+        Message::CollectionSongCountDuration { count, duration } => match count {
+            1 => format!("1 song, {duration}"),
+            count => format!("{} songs, {duration}", crate::util::format_count(*count)),
+        },
     }
 }

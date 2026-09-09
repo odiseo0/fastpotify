@@ -374,7 +374,6 @@ pub(super) fn text(key: TextKey) -> &'static str {
         }
         TextKey::CollectionCollaborativePlaylist => "TODO(es) Collaborative Playlist",
         TextKey::CollectionPublicPlaylist => "TODO(es) Public Playlist",
-        TextKey::CollectionSaveLibrary => "TODO(es) Save to Your Library",
         TextKey::ShortcutPlayPause => "TODO(es) Play or pause",
         TextKey::ShortcutPreviousNext => "TODO(es) Previous or next",
         TextKey::ShortcutSeek => "TODO(es) Seek 10 seconds",
@@ -403,6 +402,22 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::ShortcutHelp => "TODO(es) Keyboard shortcuts",
         TextKey::ShortcutCloseWindow => "TODO(es) Close the window",
         TextKey::ShortcutQuit => "TODO(es) Quit",
+        TextKey::MenuSelectionRemoveLiked => "TODO(es) Remove from Liked Songs",
+        TextKey::MenuSelectionSaveLiked => "TODO(es) Save to Liked Songs",
+        TextKey::MenuTrackRemoveLiked => "TODO(es) Remove from Liked Songs",
+        TextKey::MenuTrackSaveLiked => "TODO(es) Save to Liked Songs",
+        TextKey::TrackRowRemoveLiked => "TODO(es) Remove from Liked Songs",
+        TextKey::TrackRowSaveLiked => "TODO(es) Save to Liked Songs",
+        TextKey::TrackRowMore => "TODO(es) More",
+        TextKey::CollectionStarting => "TODO(es) Starting…",
+        TextKey::CollectionPlay => "TODO(es) Play",
+        TextKey::CollectionPause => "TODO(es) Pause",
+        TextKey::CollectionPlaylistKind => "TODO(es) Playlist",
+        TextKey::CollectionLikedSongs => "TODO(es) Liked Songs",
+        TextKey::CollectionPlaylistAddLibrary => "TODO(es) Add to Your Library",
+        TextKey::CollectionPlaylistRemoveLibrary => "TODO(es) Remove from Your Library",
+        TextKey::CollectionAlbumSaveLibrary => "TODO(es) Save to Your Library",
+        TextKey::CollectionAlbumRemoveLibrary => "TODO(es) Remove from Your Library",
     }
 }
 
@@ -505,5 +520,23 @@ pub(super) fn message(message: &Message) -> String {
             count => format!("TODO(es) Playlist • {count} songs"),
         },
         Message::SortBy { label } => format!("TODO(es) Sort by {label}"),
+        Message::CollectionNamedContributors { names } => {
+            format!("TODO(es) with {}", names.join(" and "))
+        }
+        Message::CollectionOtherContributors { count } => match count {
+            1 => "TODO(es) and 1 other".to_string(),
+            count => format!("TODO(es) and {count} others"),
+        },
+        Message::CollectionSongCount { count } => match count {
+            1 => "TODO(es) 1 song".to_string(),
+            count => format!("TODO(es) {} songs", crate::util::format_count(*count)),
+        },
+        Message::CollectionSongCountDuration { count, duration } => match count {
+            1 => format!("TODO(es) 1 song, {duration}"),
+            count => format!(
+                "TODO(es) {} songs, {duration}",
+                crate::util::format_count(*count)
+            ),
+        },
     }
 }

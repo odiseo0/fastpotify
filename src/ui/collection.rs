@@ -6,7 +6,7 @@ use egui::{Align, Layout, Rect, Sense, Vec2, pos2, vec2};
 
 use crate::api::models::{Album, PlayableItem, Playlist, pick_image};
 use crate::app::App;
-use crate::i18n::TextKey;
+use crate::i18n::{Message, TextKey};
 use crate::model::{
     Action, Dialog, DragTrack, Loadable, Page, PagedList, RowContext, SortColumn, TableItem,
     TableRowsCache, TableSort,
@@ -140,7 +140,13 @@ pub fn actions_row(
                 Icon::PlayFilled
             };
             if app.play_pending(uri) {
-                theme::circle_spinner(ui, 56.0, palette.accent, palette.on_accent, "Starting…");
+                theme::circle_spinner(
+                    ui,
+                    56.0,
+                    palette.accent,
+                    palette.on_accent,
+                    app.translator.text(TextKey::CollectionStarting),
+                );
             } else if theme::circle_button(
                 ui,
                 icon,
@@ -148,7 +154,11 @@ pub fn actions_row(
                 palette.accent,
                 palette.accent_hover,
                 palette.on_accent,
-                if now_playing_here { "Pause" } else { "Play" },
+                app.translator.text(if now_playing_here {
+                    TextKey::CollectionPause
+                } else {
+                    TextKey::CollectionPlay
+                }),
             )
             .clicked()
             {
@@ -244,7 +254,7 @@ pub fn actions_row(
                 widgets::search_field(
                     ui,
                     &palette,
-                    egui::Id::new(("collection-filter", actions.name)),
+                    egui::Id::new(("collection-filter", &actions.play_uri)),
                     filter,
                     app.translator.text(TextKey::CollectionFilter),
                     220.0,
@@ -889,23 +899,28 @@ pub fn playlist(app: &mut App, ui: &mut egui::Ui, id: &str) {
                     .collect();
                 byline.push((
                     if named.len() == others && others <= 2 {
-                        format!("with {}", named.join(" and "))
+                        app.translator
+                            .message(&Message::CollectionNamedContributors { names: named })
                     } else if others == 1 {
-                        "and 1 other".to_string()
+                        app.translator
+                            .message(&Message::CollectionOtherContributors { count: 1 })
                     } else {
-                        format!("and {others} others")
+                        app.translator
+                            .message(&Message::CollectionOtherContributors { count: others })
                     },
                     None,
                 ));
             }
             let count_text = if page.items.is_complete() {
-                format!(
-                    "{} songs, {}",
-                    util::format_count(count as u64),
-                    util::format_total_ms(total_duration(&items))
-                )
+                app.translator
+                    .message(&Message::CollectionSongCountDuration {
+                        count: count as u64,
+                        duration: util::format_total_ms(total_duration(&items)),
+                    })
             } else {
-                format!("{} songs", util::format_count(count as u64))
+                app.translator.message(&Message::CollectionSongCount {
+                    count: count as u64,
+                })
             };
             byline.push((count_text, None));
             hero(
@@ -954,7 +969,10 @@ pub fn playlist(app: &mut App, ui: &mut egui::Ui, id: &str) {
                     view: view_play,
                     saved: (!owned).then(|| (playlist.uri.clone(), saved)),
                     saved_icons: (Icon::CirclePlus, Icon::CircleCheck),
-                    saved_tooltips: (TextKey::CommonAddLibrary, TextKey::CommonRemoveLibrary),
+                    saved_tooltips: (
+                        TextKey::CollectionPlaylistAddLibrary,
+                        TextKey::CollectionPlaylistRemoveLibrary,
+                    ),
                     owned_playlist: owned.then_some(playlist_clone),
                     name: &playlist.name,
                 },
@@ -1070,7 +1088,10 @@ pub fn album(app: &mut App, ui: &mut egui::Ui, id: &str) {
                     view: album_view,
                     saved: Some((album.uri.clone(), saved)),
                     saved_icons: (Icon::CirclePlus, Icon::CircleCheck),
-                    saved_tooltips: (TextKey::CollectionSaveLibrary, TextKey::CommonRemoveLibrary),
+                    saved_tooltips: (
+                        TextKey::CollectionAlbumSaveLibrary,
+                        TextKey::CollectionAlbumRemoveLibrary,
+                    ),
                     owned_playlist: None,
                     name: &album.name,
                 },
@@ -1171,9 +1192,15 @@ fn album_hero(
         .map(|track| track.duration_ms as u64)
         .sum();
     let count_text = if tracks.is_complete() {
-        format!("{count} songs, {}", util::format_total_ms(duration))
+        app.translator
+            .message(&Message::CollectionSongCountDuration {
+                count: count as u64,
+                duration: util::format_total_ms(duration),
+            })
     } else {
-        format!("{count} songs")
+        app.translator.message(&Message::CollectionSongCount {
+            count: count as u64,
+        })
     };
     byline.push((count_text, None));
     hero(
@@ -1182,7 +1209,7 @@ fn album_hero(
         Hero {
             image: pick_image(&album.images, 300),
             liked: false,
-            kind: album.kind_label(),
+            kind: app.translator.text(album.kind_text_key()),
             title: &album.name,
             description: None,
             byline,
@@ -1221,13 +1248,15 @@ pub fn liked(app: &mut App, ui: &mut egui::Ui) {
         .map(|user| user.name().to_string())
         .unwrap_or_default();
     let count_text = if app.library.liked.is_complete() {
-        format!(
-            "{} songs, {}",
-            util::format_count(total as u64),
-            util::format_total_ms(total_duration(&items))
-        )
+        app.translator
+            .message(&Message::CollectionSongCountDuration {
+                count: total as u64,
+                duration: util::format_total_ms(total_duration(&items)),
+            })
     } else {
-        format!("{} songs", util::format_count(total as u64))
+        app.translator.message(&Message::CollectionSongCount {
+            count: total as u64,
+        })
     };
     hero(
         app,
@@ -1235,8 +1264,8 @@ pub fn liked(app: &mut App, ui: &mut egui::Ui) {
         Hero {
             image: None,
             liked: true,
-            kind: "Playlist",
-            title: "Liked Songs",
+            kind: app.translator.text(TextKey::CollectionPlaylistKind),
+            title: app.translator.text(TextKey::CollectionLikedSongs),
             description: None,
             byline: vec![(user, None), (count_text, None)],
             round: false,
@@ -1270,9 +1299,12 @@ pub fn liked(app: &mut App, ui: &mut egui::Ui) {
             view: liked_view,
             saved: None,
             saved_icons: (Icon::Heart, Icon::HeartFilled),
-            saved_tooltips: (TextKey::CommonAddLibrary, TextKey::CommonRemoveLibrary),
+            saved_tooltips: (
+                TextKey::CollectionPlaylistAddLibrary,
+                TextKey::CollectionPlaylistRemoveLibrary,
+            ),
             owned_playlist: None,
-            name: "Liked Songs",
+            name: app.translator.text(TextKey::CollectionLikedSongs),
         },
         Some(&mut filter),
     );
@@ -1343,6 +1375,36 @@ mod tests {
     use super::*;
     use crate::api::models::{Album, ArtistRef, Image, Track};
     use crate::model::PlaylistPage;
+    use crate::settings::LanguageChoice;
+
+    #[test]
+    fn collection_messages_keep_counts_names_and_durations() {
+        let english = crate::i18n::Translator::new(LanguageChoice::English);
+        let spanish = crate::i18n::Translator::new(LanguageChoice::Spanish);
+
+        assert_eq!(
+            english.message(&Message::CollectionSongCount { count: 0 }),
+            "0 songs"
+        );
+        assert_eq!(
+            english.message(&Message::CollectionSongCount { count: 1 }),
+            "1 song"
+        );
+        assert_eq!(
+            english.message(&Message::CollectionSongCountDuration {
+                count: 2,
+                duration: "7 min 04 sec".into(),
+            }),
+            "2 songs, 7 min 04 sec"
+        );
+        let contributors = Message::CollectionNamedContributors {
+            names: vec!["Ana".into(), "José".into()],
+        };
+        assert_eq!(english.message(&contributors), "with Ana and José");
+        let spanish_text = spanish.message(&contributors);
+        assert!(spanish_text.contains("Ana"));
+        assert!(spanish_text.contains("José"));
+    }
 
     fn make_large_tracks(count: usize) -> Vec<TableItem> {
         (0..count)

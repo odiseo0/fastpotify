@@ -260,8 +260,8 @@ macro_rules! text_keys {
             LibraryNoPodcasts,
             LibraryFollowedPodcastsDetail,
             LibraryNoSavedEpisodes,
-            LibrarySavedEpisodesDetail
-            ,GreetingMorning,
+            LibrarySavedEpisodesDetail,
+            GreetingMorning,
             GreetingAfternoon,
             GreetingEvening,
             DialogDeletePlaylist,
@@ -283,8 +283,8 @@ macro_rules! text_keys {
             DialogEditDetails,
             DialogDescription,
             DialogOptionalDescription,
-            DialogSave
-            ,CommonSearch,
+            DialogSave,
+            CommonSearch,
             SidebarLibrary,
             SidebarHideControl,
             SidebarHideCommand,
@@ -294,8 +294,8 @@ macro_rules! text_keys {
             SidebarNoMatches,
             SidebarUnpin,
             SidebarPinTop,
-            SidebarSortRecent
-            ,MenuPlayNext,
+            SidebarSortRecent,
+            MenuPlayNext,
             MenuAddPlaylist,
             MenuNewPlaylist,
             MenuSaveEpisode,
@@ -314,10 +314,10 @@ macro_rules! text_keys {
             TableOriginalOrderReversed,
             TableAddedBy,
             TableDateAdded,
-            TableSortDuration
-            ,TableTitle,
-            TableAlbum
-            ,CollectionShuffleOff,
+            TableSortDuration,
+            TableTitle,
+            TableAlbum,
+            CollectionShuffleOff,
             CollectionFilter,
             CollectionGoSong,
             CollectionGo,
@@ -326,8 +326,7 @@ macro_rules! text_keys {
             CollectionTopSongsDetail,
             CollectionCollaborativePlaylist,
             CollectionPublicPlaylist,
-            CollectionSaveLibrary
-            ,ShortcutPlayPause,
+            ShortcutPlayPause,
             ShortcutPreviousNext,
             ShortcutSeek,
             ShortcutVolume,
@@ -354,7 +353,23 @@ macro_rules! text_keys {
             ShortcutSettings,
             ShortcutHelp,
             ShortcutCloseWindow,
-            ShortcutQuit
+            ShortcutQuit,
+            MenuSelectionRemoveLiked,
+            MenuSelectionSaveLiked,
+            MenuTrackRemoveLiked,
+            MenuTrackSaveLiked,
+            TrackRowRemoveLiked,
+            TrackRowSaveLiked,
+            TrackRowMore,
+            CollectionStarting,
+            CollectionPlay,
+            CollectionPause,
+            CollectionPlaylistKind,
+            CollectionLikedSongs,
+            CollectionPlaylistAddLibrary,
+            CollectionPlaylistRemoveLibrary,
+            CollectionAlbumSaveLibrary,
+            CollectionAlbumRemoveLibrary
         }
     };
 }
@@ -484,6 +499,19 @@ pub enum Message {
     },
     SortBy {
         label: String,
+    },
+    CollectionNamedContributors {
+        names: Vec<String>,
+    },
+    CollectionOtherContributors {
+        count: usize,
+    },
+    CollectionSongCount {
+        count: u64,
+    },
+    CollectionSongCountDuration {
+        count: u64,
+        duration: String,
     },
 }
 

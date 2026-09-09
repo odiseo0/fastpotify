@@ -302,6 +302,30 @@ pub fn menu_frame(palette: &Palette) -> egui::Frame {
         })
 }
 
+const fn selection_liked_key(saved: bool) -> TextKey {
+    if saved {
+        TextKey::MenuSelectionRemoveLiked
+    } else {
+        TextKey::MenuSelectionSaveLiked
+    }
+}
+
+const fn track_menu_liked_key(saved: bool) -> TextKey {
+    if saved {
+        TextKey::MenuTrackRemoveLiked
+    } else {
+        TextKey::MenuTrackSaveLiked
+    }
+}
+
+const fn track_row_liked_key(saved: bool) -> TextKey {
+    if saved {
+        TextKey::TrackRowRemoveLiked
+    } else {
+        TextKey::TrackRowSaveLiked
+    }
+}
+
 /// Context menu for actions on selected tracks.
 ///
 /// Tracks stay in table order rather than selection order.
@@ -343,10 +367,10 @@ pub fn picked_menu(ui: &mut Ui, app: &mut App, songs: &[PlayableItem]) {
     let (icon, text) = if all_saved {
         (
             Icon::HeartFilled,
-            translator.text(TextKey::PlayerRemoveLiked),
+            translator.text(selection_liked_key(true)),
         )
     } else {
-        (Icon::Heart, translator.text(TextKey::PlayerSaveLiked))
+        (Icon::Heart, translator.text(selection_liked_key(false)))
     };
     if menu_item(ui, &palette, Some(icon), text) {
         app.actions.push(Action::SetSavedMany {
@@ -418,10 +442,10 @@ pub fn item_menu(
         let (icon, text) = if saved {
             (
                 Icon::HeartFilled,
-                translator.text(TextKey::PlayerRemoveLiked),
+                translator.text(track_menu_liked_key(true)),
             )
         } else {
-            (Icon::Heart, translator.text(TextKey::PlayerSaveLiked))
+            (Icon::Heart, translator.text(track_menu_liked_key(false)))
         };
         if menu_item(ui, &palette, Some(icon), text) {
             app.actions.push(Action::ToggleSaved(uri.clone()));
@@ -1280,11 +1304,9 @@ fn track_row_contents(ui: &mut Ui, app: &mut App, row: TrackRow<'_>) -> Option<R
             } else {
                 (Icon::Heart, palette.secondary)
             };
-            let tooltip = if saved == Some(true) {
-                "Remove from Liked Songs"
-            } else {
-                "Save to Liked Songs"
-            };
+            let tooltip = app
+                .translator
+                .text(track_row_liked_key(saved == Some(true)));
             if theme::icon_button(&mut child, icon, 16.0, color, palette.text, tooltip).clicked() {
                 app.actions
                     .push(Action::ToggleSaved(row.item.uri().to_string()));
@@ -1328,7 +1350,7 @@ fn track_row_contents(ui: &mut Ui, app: &mut App, row: TrackRow<'_>) -> Option<R
             18.0,
             palette.secondary,
             palette.text,
-            "More",
+            app.translator.text(TextKey::TrackRowMore),
         );
         egui::Popup::menu(&more)
             .id(menu_id)
@@ -2279,7 +2301,38 @@ mod tests {
     use crate::app::{App, AppOptions};
     use crate::model::{Action, Page};
     use crate::paths::AppDirs;
-    use crate::settings::Settings;
+    use crate::settings::{LanguageChoice, Settings};
+
+    #[test]
+    fn saved_track_controls_select_context_specific_text() {
+        let english = crate::i18n::Translator::new(LanguageChoice::English);
+        let spanish = crate::i18n::Translator::new(LanguageChoice::Spanish);
+
+        assert_eq!(
+            english.text(selection_liked_key(false)),
+            "Save to Liked Songs"
+        );
+        assert_eq!(
+            english.text(selection_liked_key(true)),
+            "Remove from Liked Songs"
+        );
+        assert_eq!(
+            english.text(track_menu_liked_key(false)),
+            "Save to Liked Songs"
+        );
+        assert_eq!(
+            english.text(track_row_liked_key(true)),
+            "Remove from Liked Songs"
+        );
+        assert_eq!(
+            spanish.text(track_menu_liked_key(false)),
+            spanish.text(TextKey::MenuTrackSaveLiked)
+        );
+        assert_eq!(
+            spanish.text(track_row_liked_key(true)),
+            spanish.text(TextKey::TrackRowRemoveLiked)
+        );
+    }
 
     fn test_app() -> App {
         let root = std::env::temp_dir().join(format!(
