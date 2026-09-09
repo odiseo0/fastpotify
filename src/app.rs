@@ -1293,7 +1293,7 @@ impl App {
                     let tint = self.palette.tint_from_art(color);
                     self.accents.insert(url, tint);
                 }
-                Event::Error(message) => self.toast_error(message),
+                Event::Error(message) => self.toast_error_message(message),
                 Event::Rootlist { result } => match result {
                     Ok(rootlist) => {
                         let account_id = self.user_id().map(str::to_owned).or_else(|| {
@@ -1408,7 +1408,7 @@ impl App {
             }
             AuthStatus::Failed(message) => {
                 self.sign_in_url = None;
-                self.toast_error(message.clone());
+                self.toast_error_message(message.clone());
             }
             _ => {}
         }
@@ -3254,11 +3254,9 @@ impl App {
                 }
                 Err(error) => {
                     if matches!(error, crate::api::ApiError::SignInExpired { .. }) {
-                        self.auth = AuthStatus::Failed(
-                            self.translator
-                                .text(TextKey::NoticeSignInExpired)
-                                .to_string(),
-                        );
+                        self.auth = AuthStatus::Failed(Message::NoticeText {
+                            key: TextKey::NoticeSignInExpired,
+                        });
                     } else {
                         self.toast_detail_error(
                             TextKey::NoticeProfileLoadFailedPrefix,
@@ -3832,8 +3830,8 @@ impl App {
                 self.playlist_busy = false;
                 match result {
                     Ok(snapshot) => {
-                        if !message.is_empty() {
-                            self.toast(message);
+                        if let Some(message) = message {
+                            self.toast_message(message);
                         }
                         let mut generation = None;
                         if let Some(page) = self.playlist_pages.get_mut(&id) {
@@ -8020,6 +8018,38 @@ mod tests {
     }
 
     #[test]
+    fn delayed_background_messages_use_the_language_active_when_they_arrive() {
+        let mut app = test_app_with_settings(
+            "translated-background-messages",
+            Settings {
+                language: crate::settings::LanguageChoice::Spanish,
+                ..Settings::default()
+            },
+        );
+        let sign_in_error = Message::NoticeDetail {
+            prefix: TextKey::NoticeSharedSignInFailedPrefix,
+            detail: "HTTP 401 request-id=late".into(),
+        };
+        let playlist_notice = Message::NoticeAddedToPlaylist {
+            name: "Viaje de Ana".into(),
+        };
+        let expected_error = app.translator.message(&sign_in_error);
+        let expected_notice = app.translator.message(&playlist_notice);
+
+        app.handle_auth(AuthStatus::Failed(sign_in_error));
+        app.handle_api(ApiResponse::PlaylistItemsChanged {
+            id: "playlist".into(),
+            message: Some(playlist_notice),
+            result: Ok(Some("snapshot".into())),
+        });
+
+        assert_eq!(app.toasts[0].message, expected_error);
+        assert_eq!(app.toasts[1].message, expected_notice);
+        assert!(app.toasts[0].message.contains("HTTP 401 request-id=late"));
+        assert!(app.toasts[1].message.contains("Viaje de Ana"));
+    }
+
+    #[test]
     fn slow_spotify_suggests_a_personal_app_once_a_day() {
         let mut app = test_app("personal-app-nudge");
         app.auth = AuthStatus::Connected {
@@ -8686,7 +8716,9 @@ mod tests {
 
         app.handle_api(ApiResponse::PlaylistItemsChanged {
             id: "changed".into(),
-            message: "Added to Playlist".into(),
+            message: Some(Message::NoticeAddedToPlaylist {
+                name: "Playlist".into(),
+            }),
             result: Ok(Some("new".into())),
         });
 
@@ -8809,7 +8841,9 @@ mod tests {
 
         app.handle_api(ApiResponse::PlaylistItemsChanged {
             id: "best".into(),
-            message: "Added to The best music ever".into(),
+            message: Some(Message::NoticeAddedToPlaylist {
+                name: "The best music ever".into(),
+            }),
             result: Ok(Some("new".into())),
         });
 
@@ -8858,7 +8892,7 @@ mod tests {
         );
         app.handle_api(ApiResponse::PlaylistItemsChanged {
             id: "best".into(),
-            message: String::new(),
+            message: None,
             result: Ok(Some("after".into())),
         });
 

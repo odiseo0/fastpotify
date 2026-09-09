@@ -17,6 +17,7 @@ use crate::api::{
     AccountId, ApiError, ApiGateway, ApiSource, NetActivity, Operation, PlayRequest, PlaylistId,
     SessionState, TokenProvider, WebTokens,
 };
+use crate::i18n::{Message, TextKey};
 use crate::images::{ArtLoader, accent_color};
 use crate::model::PlaylistCache;
 use crate::paths::AppDirs;
@@ -34,7 +35,7 @@ pub enum AuthStatus {
     WaitingForBrowser { url: String },
     Connecting,
     Connected { username: String },
-    Failed(String),
+    Failed(Message),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -322,7 +323,7 @@ pub enum ApiResponse {
     },
     PlaylistItemsChanged {
         id: String,
-        message: String,
+        message: Option<Message>,
         result: ApiResult<Option<String>>,
     },
     PlaylistFollowChanged {
@@ -524,7 +525,7 @@ pub enum Event {
         url: String,
         color: [u8; 3],
     },
-    Error(String),
+    Error(Message),
     /// GitHub answered an update check, or the request failed.
     UpdateChecked {
         manual: bool,
@@ -859,12 +860,15 @@ impl Worker {
                 Command::Player(command) => match &self.engine {
                     Some(engine) => {
                         if let Err(error) = engine.command(command) {
-                            self.emit(Event::Error(format!("Playback error: {error}")));
+                            self.emit(Event::Error(Message::NoticeDetail {
+                                prefix: TextKey::NoticePlaybackFailedPrefix,
+                                detail: error.to_string(),
+                            }));
                         }
                     }
-                    None => self.emit(Event::Error(
-                        "Local playback isn't set up on this computer yet".into(),
-                    )),
+                    None => self.emit(Event::Error(Message::NoticeText {
+                        key: TextKey::NoticeLocalPlaybackNotSetUp,
+                    })),
                 },
                 Command::Api(request) => self.dispatch(request),
                 Command::Accent { url } => self.accent(url),
@@ -946,9 +950,9 @@ impl Worker {
                 self.emit(Event::Auth(AuthStatus::Connecting));
                 self.on_web_signed_in(ApiSource::Shared, token);
             }
-            Some(_) => self.emit(Event::Auth(AuthStatus::Failed(
-                "Spotify permissions changed. Sign in again.".into(),
-            ))),
+            Some(_) => self.emit(Event::Auth(AuthStatus::Failed(Message::NoticeText {
+                key: TextKey::NoticeSpotifyPermissionsChanged,
+            }))),
             None => self.emit(Event::Auth(AuthStatus::SignedOut)),
         }
         let personal = self.web_client_id.as_deref().and_then(|client_id| {
@@ -1017,11 +1021,12 @@ impl Worker {
                 }
             };
             gateway.clear(source);
-            let message = match source {
-                ApiSource::Shared => format!("Shared Spotify sign-in failed: {error}"),
-                ApiSource::Personal => {
-                    format!("Personal app authorization failed: {error}")
-                }
+            let message = Message::NoticeDetail {
+                prefix: match source {
+                    ApiSource::Shared => TextKey::NoticeSharedSignInFailedPrefix,
+                    ApiSource::Personal => TextKey::NoticePersonalAuthorizationFailedPrefix,
+                },
+                detail: error.to_string(),
             };
             let other_ready = match source {
                 ApiSource::Shared => gateway.personal_ready(),
@@ -1046,11 +1051,15 @@ impl Worker {
             return;
         }
         if let Err(error) = self.api.install(source, AccountId::new(user.id.clone())) {
+            log::warn!("unable to install the Spotify grant: {error}");
             self.api.clear(source);
+            let message = Message::NoticeText {
+                key: TextKey::NoticeSpotifyAccountsDiffer,
+            };
             if source == ApiSource::Shared {
-                self.emit(Event::Auth(AuthStatus::Failed(error.to_string())));
+                self.emit(Event::Auth(AuthStatus::Failed(message.clone())));
             }
-            self.emit(Event::Error(error.to_string()));
+            self.emit(Event::Error(message));
             self.finish_authorization(source);
             return;
         }
@@ -1101,7 +1110,10 @@ impl Worker {
                 match crate::auth::Grant::personal_web_api(client_id) {
                     Ok(grant) => grant,
                     Err(error) => {
-                        self.emit(Event::Error(error.to_string()));
+                        log::warn!("unable to start personal app authorization: {error}");
+                        self.emit(Event::Error(Message::NoticeText {
+                            key: TextKey::NoticePersonalClientIdRequired,
+                        }));
                         return;
                     }
                 }
@@ -1149,7 +1161,10 @@ impl Worker {
                     }
                     let message = error.to_string();
                     if !message.contains("cancelled") {
-                        let _ = events.send(Event::Error(format!("Sign-in failed: {message}")));
+                        let _ = events.send(Event::Error(Message::NoticeDetail {
+                            prefix: TextKey::NoticeSignInFailedPrefix,
+                            detail: message,
+                        }));
                     }
                     waker.wake();
                     let _ = commands.send(Command::SignInEnded { source });
@@ -1680,9 +1695,9 @@ impl Worker {
                 if api_source == ApiSource::Personal {
                     let _ = events.send(Event::WebApp { client_id: None });
                 } else {
-                    let _ = events.send(Event::Auth(AuthStatus::Failed(
-                        "Your Spotify sign-in expired. Please sign in again.".into(),
-                    )));
+                    let _ = events.send(Event::Auth(AuthStatus::Failed(Message::NoticeText {
+                        key: TextKey::NoticeSignInExpired,
+                    })));
                 }
             }
             if let ApiResponse::Me(result) = &response {
@@ -1982,7 +1997,9 @@ async fn handle(api: &ApiGateway, request: ApiRequest) -> (ApiResponse, Option<A
         } => ApiResponse::PlaylistItemsChanged {
             result: routed!(add_playlist_items(&playlist_id, &uris, None)),
             id: playlist_id,
-            message: format!("Added to {playlist_name}"),
+            message: Some(Message::NoticeAddedToPlaylist {
+                name: playlist_name,
+            }),
         },
         ApiRequest::RemoveFromPlaylist {
             playlist_id,
@@ -1995,7 +2012,9 @@ async fn handle(api: &ApiGateway, request: ApiRequest) -> (ApiResponse, Option<A
                 snapshot_id.as_deref()
             )),
             id: playlist_id,
-            message: "Removed from playlist".to_string(),
+            message: Some(Message::NoticeText {
+                key: TextKey::NoticeRemovedFromPlaylist,
+            }),
         },
         ApiRequest::ReorderPlaylist {
             playlist_id,
@@ -2010,7 +2029,7 @@ async fn handle(api: &ApiGateway, request: ApiRequest) -> (ApiResponse, Option<A
                 snapshot_id.as_deref()
             )),
             id: playlist_id,
-            message: String::new(),
+            message: None,
         },
         ApiRequest::FollowPlaylist { id, follow } => ApiResponse::PlaylistFollowChanged {
             result: if follow {

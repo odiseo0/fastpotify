@@ -489,6 +489,15 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::NoticeRemoteVolumeFailed => "Couldn't change the volume",
         TextKey::NoticeRemoteShuffleFailed => "Couldn't change shuffle",
         TextKey::NoticeRemoteRepeatFailed => "Couldn't change repeat",
+        TextKey::NoticeLocalPlaybackNotSetUp => "Local playback isn't set up on this computer yet",
+        TextKey::NoticeSpotifyPermissionsChanged => "Spotify permissions changed. Sign in again.",
+        TextKey::NoticeSpotifyAccountsDiffer => "The Spotify grants belong to different accounts",
+        TextKey::NoticePersonalClientIdRequired => "a personal Spotify Client ID is required",
+        TextKey::NoticeRemovedFromPlaylist => "Removed from playlist",
+        TextKey::NoticePlaybackFailedPrefix => "Playback error",
+        TextKey::NoticeSharedSignInFailedPrefix => "Shared Spotify sign-in failed",
+        TextKey::NoticePersonalAuthorizationFailedPrefix => "Personal app authorization failed",
+        TextKey::NoticeSignInFailedPrefix => "Sign-in failed",
     }
 }
 
@@ -655,6 +664,8 @@ pub(super) fn message(message: &Message) -> String {
                 format!("{action}: {detail}.")
             }
         }
+        Message::NoticeText { key } => text(*key).to_string(),
+        Message::NoticeAddedToPlaylist { name } => format!("Added to {name}"),
     }
 }
 

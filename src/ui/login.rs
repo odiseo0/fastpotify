@@ -104,7 +104,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, connecting: bool) {
                             });
                         }
                         AuthStatus::Failed(message) => {
-                            let message = message.clone();
+                            let message = translator.message(message);
                             ui.add(
                                 egui::Label::new(
                                     egui::RichText::new(message)

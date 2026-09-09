@@ -503,6 +503,25 @@ pub(super) fn text(key: TextKey) -> &'static str {
         TextKey::NoticeRemoteVolumeFailed => "TODO(es) Couldn't change the volume",
         TextKey::NoticeRemoteShuffleFailed => "TODO(es) Couldn't change shuffle",
         TextKey::NoticeRemoteRepeatFailed => "TODO(es) Couldn't change repeat",
+        TextKey::NoticeLocalPlaybackNotSetUp => {
+            "TODO(es) Local playback isn't set up on this computer yet"
+        }
+        TextKey::NoticeSpotifyPermissionsChanged => {
+            "TODO(es) Spotify permissions changed. Sign in again."
+        }
+        TextKey::NoticeSpotifyAccountsDiffer => {
+            "TODO(es) The Spotify grants belong to different accounts"
+        }
+        TextKey::NoticePersonalClientIdRequired => {
+            "TODO(es) a personal Spotify Client ID is required"
+        }
+        TextKey::NoticeRemovedFromPlaylist => "TODO(es) Removed from playlist",
+        TextKey::NoticePlaybackFailedPrefix => "TODO(es) Playback error",
+        TextKey::NoticeSharedSignInFailedPrefix => "TODO(es) Shared Spotify sign-in failed",
+        TextKey::NoticePersonalAuthorizationFailedPrefix => {
+            "TODO(es) Personal app authorization failed"
+        }
+        TextKey::NoticeSignInFailedPrefix => "TODO(es) Sign-in failed",
     }
 }
 
@@ -682,6 +701,8 @@ pub(super) fn message(message: &Message) -> String {
                 format!("TODO(es) {action}: {detail}.")
             }
         }
+        Message::NoticeText { key } => text(*key).to_string(),
+        Message::NoticeAddedToPlaylist { name } => format!("TODO(es) Added to {name}"),
     }
 }
 

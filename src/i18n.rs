@@ -380,8 +380,8 @@ macro_rules! text_keys {
             CollectionPlaylistAddLibrary,
             CollectionPlaylistRemoveLibrary,
             CollectionAlbumSaveLibrary,
-            CollectionAlbumRemoveLibrary
-            ,DateMonthJan,
+            CollectionAlbumRemoveLibrary,
+            DateMonthJan,
             DateMonthFeb,
             DateMonthMar,
             DateMonthApr,
@@ -392,8 +392,8 @@ macro_rules! text_keys {
             DateMonthSep,
             DateMonthOct,
             DateMonthNov,
-            DateMonthDec
-            ,NoticeUpToDate,
+            DateMonthDec,
+            NoticeUpToDate,
             NoticeQueueCleared,
             NoticePlaylistUpdated,
             NoticeAddedLibrary,
@@ -432,15 +432,24 @@ macro_rules! text_keys {
             NoticeSwitchDeviceFailedPrefix,
             NoticeAddQueueFailedPrefix,
             NoticeClearArtworkFailedPrefix,
-            NoticeChooseDeviceHint
-            ,NoticeRemoteStartFailed,
+            NoticeChooseDeviceHint,
+            NoticeRemoteStartFailed,
             NoticeRemotePauseFailed,
             NoticeRemoteNextFailed,
             NoticeRemotePreviousFailed,
             NoticeRemoteSeekFailed,
             NoticeRemoteVolumeFailed,
             NoticeRemoteShuffleFailed,
-            NoticeRemoteRepeatFailed
+            NoticeRemoteRepeatFailed,
+            NoticeLocalPlaybackNotSetUp,
+            NoticeSpotifyPermissionsChanged,
+            NoticeSpotifyAccountsDiffer,
+            NoticePersonalClientIdRequired,
+            NoticeRemovedFromPlaylist,
+            NoticePlaybackFailedPrefix,
+            NoticeSharedSignInFailedPrefix,
+            NoticePersonalAuthorizationFailedPrefix,
+            NoticeSignInFailedPrefix
         }
     };
 }
@@ -677,6 +686,12 @@ pub enum Message {
         detail: String,
         choose_device: bool,
     },
+    NoticeText {
+        key: TextKey,
+    },
+    NoticeAddedToPlaylist {
+        name: String,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -830,6 +845,25 @@ mod tests {
         assert_eq!(
             translator.text(TextKey::SettingsCheckForUpdates),
             "Check for updates"
+        );
+        assert_eq!(
+            translator.message(&Message::NoticeDetail {
+                prefix: TextKey::NoticePlaybackFailedPrefix,
+                detail: "device stopped".into(),
+            }),
+            "Playback error: device stopped"
+        );
+        assert_eq!(
+            translator.message(&Message::NoticeAddedToPlaylist {
+                name: "Road trip".into(),
+            }),
+            "Added to Road trip"
+        );
+        assert_eq!(
+            translator.message(&Message::NoticeText {
+                key: TextKey::NoticeRemovedFromPlaylist,
+            }),
+            "Removed from playlist"
         );
     }
 
