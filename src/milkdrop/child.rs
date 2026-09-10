@@ -1147,13 +1147,10 @@ mod tests {
         child.song = None;
         assert_eq!(
             child.corner_lines(Status::Song),
-            vec!["TODO(es) Nothing playing"]
+            vec!["No hay nada en reproducción"]
         );
         child.preset_on = true;
-        assert_eq!(
-            child.corner_lines(Status::Preset),
-            vec!["TODO(es) No preset"]
-        );
+        assert_eq!(child.corner_lines(Status::Preset), vec!["Sin preajuste"]);
     }
 
     /// Frame deadlines do not drift with rendering time.

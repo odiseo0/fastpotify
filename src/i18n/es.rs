@@ -2,688 +2,714 @@ use super::{Message, TextKey};
 
 pub(super) fn text(key: TextKey) -> &'static str {
     match key {
-        TextKey::SettingsTitle => "Settings",
-        TextKey::SettingsAccountHeading => "Account",
+        TextKey::SettingsTitle => "Configuración",
+        TextKey::SettingsAccountHeading => "Cuenta",
         TextKey::SettingsSpotifyPremium => "Spotify Premium",
-        TextKey::SettingsSpotifyFreeNeedsPremium => "Spotify Free, local playback needs Premium",
-        TextKey::SettingsSignOut => "Sign out",
-        TextKey::SettingsPersonalAppLabel => "Personal Spotify app",
+        TextKey::SettingsSpotifyFreeNeedsPremium => {
+            "Spotify Free, la reproducción local requiere Premium"
+        }
+        TextKey::SettingsSignOut => "Cerrar sesión",
+        TextKey::SettingsPersonalAppLabel => "Aplicación personal de Spotify",
         TextKey::SettingsPersonalAppDetail => {
-            "Use a personal Development Mode app for a separate API quota. The shared app stays active."
+            "Usa una aplicación personal en modo de desarrollo para tener una cuota de API aparte. La aplicación compartida seguirá activa."
         }
         TextKey::SettingsClientIdHint => "Client ID",
-        TextKey::SettingsCreateAppLabel => "Create an app",
-        TextKey::SettingsCreateAppDetail => "Create one for free in Spotify's developer dashboard.",
-        TextKey::SettingsSetupGuide => "Setup guide",
-        TextKey::SettingsPersonalAppReadyLabel => "Personal app ready",
+        TextKey::SettingsCreateAppLabel => "Crear una aplicación",
+        TextKey::SettingsCreateAppDetail => {
+            "Créala gratis en el panel para desarrolladores de Spotify."
+        }
+        TextKey::SettingsSetupGuide => "Guía de configuración",
+        TextKey::SettingsPersonalAppReadyLabel => "Aplicación personal lista",
         TextKey::SettingsPersonalAppReadyDetail => {
-            "Supported requests use your app. Other requests use the shared app."
+            "Las solicitudes compatibles usan tu aplicación. Las demás usan la aplicación compartida."
         }
-        TextKey::SettingsRemove => "Remove",
-        TextKey::SettingsAuthorizePersonalAppLabel => "Authorize your personal app",
+        TextKey::SettingsRemove => "Quitar",
+        TextKey::SettingsAuthorizePersonalAppLabel => "Autorizar tu aplicación personal",
         TextKey::SettingsAuthorizePersonalAppDetail => {
-            "Spotify opens in your browser to verify the account."
+            "Spotify se abre en el navegador para verificar la cuenta."
         }
-        TextKey::SettingsAuthorize => "Authorize",
-        TextKey::SettingsRemovePersonalAppLabel => "Remove personal app",
-        TextKey::SettingsRemovePersonalAppDetail => "Shared access remains signed in.",
-        TextKey::SettingsPlaybackHeading => "Playback on this computer",
-        TextKey::SettingsPlaybackReady => "Ready",
-        TextKey::SettingsPlaybackReadyDetail => "This computer is a Spotify Connect device.",
-        TextKey::SettingsPlaybackSettingUp => "Setting up",
-        TextKey::SettingsPlaybackSettingUpDetail => "Finish authorizing in your browser.",
-        TextKey::SettingsPlaybackConnecting => "Connecting",
-        TextKey::SettingsPlaybackConnectingDetail => "Connecting to Spotify…",
-        TextKey::SettingsPlaybackUnavailable => "Unavailable",
-        TextKey::SettingsPlaybackNotSetUp => "Not set up",
+        TextKey::SettingsAuthorize => "Autorizar",
+        TextKey::SettingsRemovePersonalAppLabel => "Quitar aplicación personal",
+        TextKey::SettingsRemovePersonalAppDetail => "El acceso compartido seguirá conectado.",
+        TextKey::SettingsPlaybackHeading => "Reproducción en este equipo",
+        TextKey::SettingsPlaybackReady => "Listo",
+        TextKey::SettingsPlaybackReadyDetail => "Este equipo es un dispositivo Spotify Connect.",
+        TextKey::SettingsPlaybackSettingUp => "Configurando",
+        TextKey::SettingsPlaybackSettingUpDetail => "Termina la autorización en el navegador.",
+        TextKey::SettingsPlaybackConnecting => "Conectando",
+        TextKey::SettingsPlaybackConnectingDetail => "Conectando con Spotify…",
+        TextKey::SettingsPlaybackUnavailable => "No disponible",
+        TextKey::SettingsPlaybackNotSetUp => "Sin configurar",
         TextKey::SettingsPlaybackNotSetUpDetail => {
-            "Requires Spotify Premium and a one-time browser sign-in."
+            "Requiere Spotify Premium e iniciar sesión una vez en el navegador."
         }
-        TextKey::SettingsTryAgain => "Try again",
-        TextKey::SettingsEnablePlayback => "Enable playback here",
-        TextKey::SettingsReconnect => "Reconnect",
-        TextKey::SettingsDeviceNameLabel => "Device name",
-        TextKey::SettingsDeviceNameDetail => "How this computer appears in Spotify Connect.",
-        TextKey::SettingsAudioQualityLabel => "Audio quality",
-        TextKey::SettingsAudioQualityDetail => "Higher bitrates use more data and cache space.",
-        TextKey::SettingsQualityVeryHigh => "Very high · 320 kbps",
-        TextKey::SettingsQualityHigh => "High · 160 kbps",
+        TextKey::SettingsTryAgain => "Intentar de nuevo",
+        TextKey::SettingsEnablePlayback => "Activar la reproducción aquí",
+        TextKey::SettingsReconnect => "Volver a conectar",
+        TextKey::SettingsDeviceNameLabel => "Nombre del dispositivo",
+        TextKey::SettingsDeviceNameDetail => "Cómo aparece este equipo en Spotify Connect.",
+        TextKey::SettingsAudioQualityLabel => "Calidad de audio",
+        TextKey::SettingsAudioQualityDetail => {
+            "Las tasas de bits más altas usan más datos y espacio de caché."
+        }
+        TextKey::SettingsQualityVeryHigh => "Muy alta · 320 kbps",
+        TextKey::SettingsQualityHigh => "Alta · 160 kbps",
         TextKey::SettingsQualityNormal => "Normal · 96 kbps",
-        TextKey::SettingsNormalizeVolumeLabel => "Normalize volume",
-        TextKey::SettingsNormalizeVolumeDetail => "Keep loud and quiet tracks at a similar level.",
-        TextKey::SettingsAutoplayLabel => "Autoplay",
-        TextKey::SettingsAutoplayDetail => "Keep playing similar songs when your music ends.",
-        TextKey::SettingsGaplessLabel => "Gapless playback",
-        TextKey::SettingsGaplessDetail => "Play tracks without silence between them.",
-        TextKey::SettingsKeepPlayingLabel => "Keep music playing when the window closes",
+        TextKey::SettingsNormalizeVolumeLabel => "Normalizar volumen",
+        TextKey::SettingsNormalizeVolumeDetail => {
+            "Mantiene las canciones fuertes y suaves a un nivel similar."
+        }
+        TextKey::SettingsAutoplayLabel => "Reproducción automática",
+        TextKey::SettingsAutoplayDetail => {
+            "Sigue reproduciendo canciones similares cuando termine tu música."
+        }
+        TextKey::SettingsGaplessLabel => "Reproducción sin pausas",
+        TextKey::SettingsGaplessDetail => "Reproduce las canciones sin silencio entre ellas.",
+        TextKey::SettingsKeepPlayingLabel => "Seguir reproduciendo música al cerrar la ventana",
         TextKey::SettingsKeepPlayingDetailControl => {
-            "Fastpotify hides to the system tray. Quit from the tray menu or with Ctrl+Q."
+            "Fastpotify se oculta en la bandeja del sistema. Sal desde el menú de la bandeja o con Ctrl+Q."
         }
         TextKey::SettingsKeepPlayingDetailCommand => {
-            "Fastpotify hides to the system tray. Quit from the tray menu or with Cmd+Q."
+            "Fastpotify se oculta en la bandeja del sistema. Sal desde el menú de la bandeja o con Cmd+Q."
         }
-        TextKey::SettingsUpdateChecksLabel => "Automatic update checks",
+        TextKey::SettingsUpdateChecksLabel => "Comprobaciones automáticas de actualizaciones",
         TextKey::SettingsUpdateChecksDetail => {
-            "Checks GitHub once a day. No personal data is sent."
+            "Consulta GitHub una vez al día. No envía datos personales."
         }
-        TextKey::SettingsAudioOutputLabel => "Audio output",
+        TextKey::SettingsAudioOutputLabel => "Salida de audio",
         TextKey::SettingsAudioOutputDetail => {
-            "PulseAudio also covers PipeWire. Rodio talks to ALSA directly."
+            "PulseAudio también funciona con PipeWire. Rodio se comunica directamente con ALSA."
         }
-        TextKey::SettingsOutputBufferLabel => "Output buffer",
+        TextKey::SettingsOutputBufferLabel => "Búfer de salida",
         TextKey::SettingsOutputBufferDetail => {
-            "More buffering can prevent clicks on busy computers. Less buffering makes controls respond sooner."
+            "Un búfer mayor puede evitar chasquidos en equipos ocupados. Un búfer menor hace que los controles respondan antes."
         }
-        TextKey::SettingsAudioCacheLabel => "Audio cache",
-        TextKey::SettingsAudioCacheDetail => "Save downloaded audio for later playback.",
-        TextKey::SettingsApplyRestartPlayback => "Apply and restart playback",
-        TextKey::SettingsRestartPlaybackDetail => "Restart local playback to apply these settings.",
-        TextKey::SettingsPlaybackApplied => "Playback settings applied.",
-        TextKey::SettingsAppearanceHeading => "Appearance",
-        TextKey::SettingsLanguageLabel => "Language",
-        TextKey::SettingsThemeLabel => "Theme",
-        TextKey::SettingsThemeDark => "Dark",
-        TextKey::SettingsThemeLight => "Light",
-        TextKey::SettingsThemeSystem => "Follow system",
-        TextKey::SettingsColourFromArtLabel => "Colour from album art",
+        TextKey::SettingsAudioCacheLabel => "Caché de audio",
+        TextKey::SettingsAudioCacheDetail => {
+            "Guarda el audio descargado para reproducirlo después."
+        }
+        TextKey::SettingsApplyRestartPlayback => "Aplicar y reiniciar la reproducción",
+        TextKey::SettingsRestartPlaybackDetail => {
+            "Reinicia la reproducción local para aplicar esta configuración."
+        }
+        TextKey::SettingsPlaybackApplied => "Se aplicó la configuración de reproducción.",
+        TextKey::SettingsAppearanceHeading => "Apariencia",
+        TextKey::SettingsLanguageLabel => "Idioma",
+        TextKey::SettingsThemeLabel => "Tema",
+        TextKey::SettingsThemeDark => "Oscuro",
+        TextKey::SettingsThemeLight => "Claro",
+        TextKey::SettingsThemeSystem => "Usar el del sistema",
+        TextKey::SettingsColourFromArtLabel => "Color de la portada",
         TextKey::SettingsColourFromArtDetail => {
-            "Use the current cover's colour on pages and the player bar."
+            "Usa el color de la portada actual en las páginas y la barra del reproductor."
         }
-        TextKey::SettingsCompactSidebarLabel => "Compact library sidebar",
-        TextKey::SettingsCompactSidebarDetail => "Show names without covers in the sidebar.",
-        TextKey::SettingsCompactTrackListLabel => "Compact track list",
-        TextKey::SettingsCompactTrackListDetail => "Show each track on one line without a cover.",
-        TextKey::SettingsZoomLabel => "Interface zoom",
+        TextKey::SettingsCompactSidebarLabel => "Barra lateral compacta",
+        TextKey::SettingsCompactSidebarDetail => {
+            "Muestra los nombres sin portadas en la barra lateral."
+        }
+        TextKey::SettingsCompactTrackListLabel => "Lista de canciones compacta",
+        TextKey::SettingsCompactTrackListDetail => {
+            "Muestra cada canción en una línea y sin portada."
+        }
+        TextKey::SettingsZoomLabel => "Zoom de la interfaz",
         TextKey::SettingsZoomDetailControl => {
-            "Ctrl+Plus and Ctrl+Minus work anywhere; Ctrl+0 resets."
+            "Ctrl+Más y Ctrl+Menos funcionan en cualquier lugar; Ctrl+0 restablece el zoom."
         }
-        TextKey::SettingsZoomDetailCommand => "Cmd+Plus and Cmd+Minus work anywhere; Cmd+0 resets.",
-        TextKey::SettingsWinampHeading => "Winamp skins",
-        TextKey::SettingsMiniPlayerLabel => "Mini player",
+        TextKey::SettingsZoomDetailCommand => {
+            "Cmd+Más y Cmd+Menos funcionan en cualquier lugar; Cmd+0 restablece el zoom."
+        }
+        TextKey::SettingsWinampHeading => "Skins de Winamp",
+        TextKey::SettingsMiniPlayerLabel => "Minirreproductor",
         TextKey::SettingsMiniPlayerDetailControl => {
-            "Use classic Winamp .wsz skins. Press Ctrl+M or click the skin logo to return. Drop a skin on either window to add it."
+            "Usa skins clásicos de Winamp en formato .wsz. Pulsa Ctrl+M o haz clic en el logotipo del skin para volver. Suelta un skin en cualquiera de las ventanas para añadirlo."
         }
         TextKey::SettingsMiniPlayerDetailCommand => {
-            "Use classic Winamp .wsz skins. Press Cmd+Shift+M or click the skin logo to return. Drop a skin on either window to add it."
+            "Usa skins clásicos de Winamp en formato .wsz. Pulsa Cmd+Shift+M o haz clic en el logotipo del skin para volver. Suelta un skin en cualquiera de las ventanas para añadirlo."
         }
-        TextKey::SettingsSwitchToIt => "Switch to it",
+        TextKey::SettingsSwitchToIt => "Cambiar a él",
         TextKey::SettingsSkinLabel => "Skin",
         TextKey::SettingsSkinMuseum => "Skin Museum",
-        TextKey::SettingsOpenFolder => "Open folder",
-        TextKey::SettingsSkinSizeLabel => "Size",
-        TextKey::SettingsSkinSizeDetail => "Whole-number scaling keeps skin pixels sharp.",
-        TextKey::SettingsAlwaysOnTopLabel => "Always on top",
-        TextKey::SettingsAlwaysOnTopDetail => "Keep the Winamp window above everything else.",
+        TextKey::SettingsOpenFolder => "Abrir carpeta",
+        TextKey::SettingsSkinSizeLabel => "Tamaño",
+        TextKey::SettingsSkinSizeDetail => {
+            "La escala con números enteros mantiene nítidos los píxeles del skin."
+        }
+        TextKey::SettingsAlwaysOnTopLabel => "Siempre visible",
+        TextKey::SettingsAlwaysOnTopDetail => {
+            "Mantiene la ventana de Winamp por encima de las demás."
+        }
         TextKey::SettingsMilkdropHeading => "MilkDrop",
-        TextKey::SettingsMilkdropWindowLabel => "MilkDrop window",
+        TextKey::SettingsMilkdropWindowLabel => "Ventana de MilkDrop",
         TextKey::SettingsMilkdropWindowDetailControl => {
-            "A projectM visualiser for local playback. Open it here, from the top bar, with Ctrl+Shift+K, or from the mini player's V menu. Press ? or F1 for its shortcuts."
+            "Un visualizador projectM para la reproducción local. Ábrelo aquí, desde la barra superior, con Ctrl+Shift+K o desde el menú V del minirreproductor. Pulsa ? o F1 para ver sus atajos."
         }
         TextKey::SettingsMilkdropWindowDetailCommand => {
-            "A projectM visualiser for local playback. Open it here, from the top bar, with Cmd+Shift+K, or from the mini player's V menu. Press ? or F1 for its shortcuts."
+            "Un visualizador projectM para la reproducción local. Ábrelo aquí, desde la barra superior, con Cmd+Shift+K o desde el menú V del minirreproductor. Pulsa ? o F1 para ver sus atajos."
         }
-        TextKey::SettingsPresetsLabel => "Presets",
-        TextKey::SettingsFetching => "Fetching...",
+        TextKey::SettingsPresetsLabel => "Preajustes",
+        TextKey::SettingsFetching => "Obteniendo...",
         TextKey::SettingsMilkdropOriginalPackNote => {
-            "The 550 presets that shipped with MilkDrop 2; about 1 MB."
+            "Los 550 preajustes incluidos con MilkDrop 2; cerca de 1 MB."
         }
         TextKey::SettingsMilkdropCropPackNote => {
-            "Jason Fletcher's pick of 9,800 presets the community made; about 25 MB."
+            "La selección de Jason Fletcher de 9.800 preajustes creados por la comunidad; cerca de 25 MB."
         }
-        TextKey::SettingsTimePerPresetLabel => "Time per preset",
+        TextKey::SettingsTimePerPresetLabel => "Tiempo por preajuste",
         TextKey::SettingsTimePerPresetDetail => {
-            "How long each preset plays before the next fades in."
+            "Cuánto dura cada preajuste antes de pasar de forma gradual al siguiente."
         }
-        TextKey::SettingsFrameRateLabel => "Frame rate",
+        TextKey::SettingsFrameRateLabel => "Velocidad de fotogramas",
         TextKey::SettingsFrameRateDetail => {
-            "Lower rates use fewer resources. Uncapped draws as fast as possible."
+            "Las velocidades menores usan menos recursos. Sin límite dibuja tan rápido como sea posible."
         }
-        TextKey::SettingsResolutionLabel => "Resolution",
+        TextKey::SettingsResolutionLabel => "Resolución",
         TextKey::SettingsResolutionDetail => {
-            "Half and Quarter use fewer resources and scale the image back up."
+            "Media y Cuarto usan menos recursos y vuelven a ampliar la imagen."
         }
-        TextKey::SettingsResolutionFull => "Full",
-        TextKey::SettingsResolutionHalf => "Half",
-        TextKey::SettingsResolutionQuarter => "Quarter",
-        TextKey::SettingsEqualizerHeading => "Equalizer",
-        TextKey::SettingsEqualizerLabel => "Equalizer",
+        TextKey::SettingsResolutionFull => "Completa",
+        TextKey::SettingsResolutionHalf => "Media",
+        TextKey::SettingsResolutionQuarter => "Cuarto",
+        TextKey::SettingsEqualizerHeading => "Ecualizador",
+        TextKey::SettingsEqualizerLabel => "Ecualizador",
         TextKey::SettingsEqualizerDetail => {
-            "A ten-band equalizer for playback on this computer. It does not affect other devices."
+            "Un ecualizador de diez bandas para la reproducción en este equipo. No afecta a otros dispositivos."
         }
-        TextKey::SettingsPreampLabel => "Pre",
-        TextKey::SettingsStorageHeading => "Storage",
-        TextKey::SettingsArtworkCacheLabel => "Artwork cache",
-        TextKey::SettingsClearArtwork => "Clear artwork",
-        TextKey::SettingsPlayHistoryLabel => "Play history",
-        TextKey::SettingsClearHistory => "Clear history",
-        TextKey::SettingsSignInLabel => "Sign-in",
-        TextKey::SettingsAboutHeading => "About",
+        TextKey::SettingsPreampLabel => "Preamplificador",
+        TextKey::SettingsStorageHeading => "Almacenamiento",
+        TextKey::SettingsArtworkCacheLabel => "Caché de portadas",
+        TextKey::SettingsClearArtwork => "Borrar portadas",
+        TextKey::SettingsPlayHistoryLabel => "Historial de reproducción",
+        TextKey::SettingsClearHistory => "Borrar historial",
+        TextKey::SettingsSignInLabel => "Inicio de sesión",
+        TextKey::SettingsAboutHeading => "Acerca de",
         TextKey::SettingsAboutDetail => {
-            "Built with Rust, egui, and librespot. Not affiliated with Spotify."
+            "Creado con Rust, egui y librespot. No está afiliado a Spotify."
         }
-        TextKey::SettingsCheckingUpdates => "Checking…",
-        TextKey::SettingsCheckForUpdates => "Check for updates",
-        TextKey::SettingsKeyboardShortcuts => "Keyboard shortcuts",
-        TextKey::SettingsSourceCode => "Source code",
-        TextKey::SettingsFpsUncapped => "Uncapped",
-        TextKey::CommonPlay => "TODO(es) Play",
-        TextKey::CommonPause => "TODO(es) Pause",
-        TextKey::CommonMore => "TODO(es) More",
-        TextKey::CommonStarting => "TODO(es) Starting…",
-        TextKey::CommonFollow => "TODO(es) Follow",
-        TextKey::CommonFollowing => "TODO(es) Following",
-        TextKey::CommonShowLess => "TODO(es) Show less",
-        TextKey::CommonSeeMore => "TODO(es) See more",
-        TextKey::CommonLoadMore => "TODO(es) Load more",
-        TextKey::CommonLoading => "TODO(es) Loading…",
-        TextKey::CommonRetry => "TODO(es) Retry",
-        TextKey::CommonClose => "TODO(es) Close",
-        TextKey::CommonCancel => "TODO(es) Cancel",
-        TextKey::CommonTryAgain => "TODO(es) Try again",
-        TextKey::CommonSettings => "TODO(es) Settings",
-        TextKey::WindowMinimize => "TODO(es) Minimize",
-        TextKey::WindowRestore => "TODO(es) Restore",
-        TextKey::WindowMaximize => "TODO(es) Maximize",
-        TextKey::WindowClose => "TODO(es) Close",
-        TextKey::CommonKeyboardShortcuts => "TODO(es) Keyboard shortcuts",
-        TextKey::CommonSignOut => "TODO(es) Sign out",
-        TextKey::CommonHome => "TODO(es) Home",
-        TextKey::CommonBack => "TODO(es) Back",
-        TextKey::CommonForward => "TODO(es) Forward",
-        TextKey::CommonQueue => "TODO(es) Queue",
-        TextKey::CommonLyrics => "TODO(es) Lyrics",
-        TextKey::CommonArtist => "TODO(es) Artist",
-        TextKey::CommonAlbum => "TODO(es) Album",
-        TextKey::CommonPlaylist => "TODO(es) Playlist",
-        TextKey::CommonPodcast => "TODO(es) Podcast",
-        TextKey::CommonEpisode => "TODO(es) Episode",
-        TextKey::CommonAll => "TODO(es) All",
-        TextKey::LoginTagline => "TODO(es) A native Spotify client.",
-        TextKey::LoginWaitingBrowser => "TODO(es) Waiting for Spotify in your browser…",
-        TextKey::LoginOpenAgain => "TODO(es) Didn't open? Open the sign-in page again",
-        TextKey::LoginConnecting => "TODO(es) Connecting to Spotify…",
-        TextKey::LoginUseSharedApp => "TODO(es) Use the shared Spotify app instead",
-        TextKey::LoginSignIn => "TODO(es) Sign in with Spotify",
+        TextKey::SettingsCheckingUpdates => "Comprobando…",
+        TextKey::SettingsCheckForUpdates => "Buscar actualizaciones",
+        TextKey::SettingsKeyboardShortcuts => "Atajos de teclado",
+        TextKey::SettingsSourceCode => "Código fuente",
+        TextKey::SettingsFpsUncapped => "Sin límite",
+        TextKey::CommonPlay => "Reproducir",
+        TextKey::CommonPause => "Pausar",
+        TextKey::CommonMore => "Más",
+        TextKey::CommonStarting => "Iniciando…",
+        TextKey::CommonFollow => "Seguir",
+        TextKey::CommonFollowing => "Siguiendo",
+        TextKey::CommonShowLess => "Mostrar menos",
+        TextKey::CommonSeeMore => "Ver más",
+        TextKey::CommonLoadMore => "Cargar más",
+        TextKey::CommonLoading => "Cargando…",
+        TextKey::CommonRetry => "Reintentar",
+        TextKey::CommonClose => "Cerrar",
+        TextKey::CommonCancel => "Cancelar",
+        TextKey::CommonTryAgain => "Intentar de nuevo",
+        TextKey::CommonSettings => "Configuración",
+        TextKey::WindowMinimize => "Minimizar",
+        TextKey::WindowRestore => "Restaurar",
+        TextKey::WindowMaximize => "Maximizar",
+        TextKey::WindowClose => "Cerrar",
+        TextKey::CommonKeyboardShortcuts => "Atajos de teclado",
+        TextKey::CommonSignOut => "Cerrar sesión",
+        TextKey::CommonHome => "Inicio",
+        TextKey::CommonBack => "Atrás",
+        TextKey::CommonForward => "Adelante",
+        TextKey::CommonQueue => "Cola",
+        TextKey::CommonLyrics => "Letra",
+        TextKey::CommonArtist => "Artista",
+        TextKey::CommonAlbum => "Álbum",
+        TextKey::CommonPlaylist => "Playlist",
+        TextKey::CommonPodcast => "Pódcast",
+        TextKey::CommonEpisode => "Episodio",
+        TextKey::CommonAll => "Todo",
+        TextKey::LoginTagline => "Un cliente nativo de Spotify.",
+        TextKey::LoginWaitingBrowser => "Esperando a Spotify en el navegador…",
+        TextKey::LoginOpenAgain => "¿No se abrió? Abre de nuevo la página de inicio de sesión",
+        TextKey::LoginConnecting => "Conectando con Spotify…",
+        TextKey::LoginUseSharedApp => "Usar la aplicación compartida de Spotify",
+        TextKey::LoginSignIn => "Iniciar sesión con Spotify",
         TextKey::LoginPrivacyDetail => {
-            "TODO(es) Sign in through your browser. Fastpotify never sees your password. Local playback needs Spotify Premium."
+            "Inicia sesión desde el navegador. Fastpotify nunca ve tu contraseña. La reproducción local requiere Spotify Premium."
         }
-        TextKey::LyricsFollow => "TODO(es) Follow",
-        TextKey::LyricsNothingPlaying => "TODO(es) Nothing playing",
-        TextKey::LyricsPlaySong => "TODO(es) Play a song to see its lyrics.",
-        TextKey::LyricsNoLyrics => "TODO(es) No lyrics",
-        TextKey::LyricsNoLyricsDetail => "TODO(es) No lyrics found for this track.",
-        TextKey::LyricsInstrumental => "TODO(es) Instrumental",
-        TextKey::LyricsInstrumentalDetail => "TODO(es) No timed lyrics for this track.",
-        TextKey::DevicesSettingUp => "TODO(es) Setting up…",
-        TextKey::DevicesSetUpPlayback => "TODO(es) Set up playback here",
-        TextKey::DevicesConnecting => "TODO(es) Connecting…",
-        TextKey::DevicesNetworkReceiver => "TODO(es) On your network, click to connect",
-        TextKey::DevicesHeading => "TODO(es) Connect to a device",
-        TextKey::DevicesRefresh => "TODO(es) Refresh",
+        TextKey::LyricsFollow => "Seguir",
+        TextKey::LyricsNothingPlaying => "No hay nada en reproducción",
+        TextKey::LyricsPlaySong => "Reproduce una canción para ver la letra.",
+        TextKey::LyricsNoLyrics => "Sin letra",
+        TextKey::LyricsNoLyricsDetail => "No se encontró la letra de esta canción.",
+        TextKey::LyricsInstrumental => "Instrumental",
+        TextKey::LyricsInstrumentalDetail => "Esta canción no tiene letra sincronizada.",
+        TextKey::DevicesSettingUp => "Configurando…",
+        TextKey::DevicesSetUpPlayback => "Configurar la reproducción aquí",
+        TextKey::DevicesConnecting => "Conectando…",
+        TextKey::DevicesNetworkReceiver => "En tu red, haz clic para conectar",
+        TextKey::DevicesHeading => "Conectar a un dispositivo",
+        TextKey::DevicesRefresh => "Actualizar",
         TextKey::DevicesNoneFound => {
-            "TODO(es) No devices found. Open Spotify on another device, then refresh."
+            "No se encontraron dispositivos. Abre Spotify en otro dispositivo y actualiza."
         }
-        TextKey::DevicesListeningHere => "TODO(es) Listening on this device",
-        TextKey::DevicesRestricted => "TODO(es) Restricted",
-        TextKey::DevicesPlayHere => "TODO(es) Play here",
-        TextKey::QueueRecentTab => "TODO(es) Recent",
-        TextKey::QueueSavePlaylist => "TODO(es) Save as a playlist",
-        TextKey::QueueClear => "TODO(es) Clear queue",
-        TextKey::QueueNowPlaying => "TODO(es) Now playing",
-        TextKey::QueueNothingQueued => "TODO(es) Nothing queued",
-        TextKey::QueueNothingQueuedDetail => "TODO(es) Queued songs appear here.",
-        TextKey::QueuePlayingNext => "TODO(es) Playing next",
-        TextKey::QueueNextUp => "TODO(es) Next up",
-        TextKey::QueueNoRecentPlays => "TODO(es) No recent plays",
-        TextKey::QueueNoRecentPlaysDetail => "TODO(es) Played songs appear here.",
-        TextKey::PlayerNothingPlaying => "TODO(es) Nothing playing",
-        TextKey::PlayerPickSomething => "TODO(es) Pick a song, album, or playlist",
-        TextKey::PlayerRemoveLiked => "TODO(es) Remove from Liked Songs",
-        TextKey::PlayerSaveLiked => "TODO(es) Save to Liked Songs",
-        TextKey::PlayerShuffle => "TODO(es) Shuffle",
-        TextKey::PlayerShuffleOn => "TODO(es) Shuffle",
-        TextKey::PlayerPrevious => "TODO(es) Previous",
-        TextKey::PlayerNext => "TODO(es) Next",
-        TextKey::PlayerRepeat => "TODO(es) Repeat",
-        TextKey::PlayerRepeatOne => "TODO(es) Repeat one",
-        TextKey::PlayerRepeatOff => "TODO(es) Repeat off",
-        TextKey::PlayerPositionAccessibility => "TODO(es) Playback position (%)",
-        TextKey::PlayerVolumeAccessibility => "TODO(es) Volume (%)",
-        TextKey::PlayerUnmute => "TODO(es) Unmute",
-        TextKey::PlayerMute => "TODO(es) Mute",
-        TextKey::PlayerConnectDevice => "TODO(es) Connect to a device",
-        TextKey::TopbarShowSidebarControl => "TODO(es) Show sidebar (Ctrl+B)",
-        TextKey::TopbarShowSidebarCommand => "TODO(es) Show sidebar (Cmd+B)",
-        TextKey::TopbarSearchHint => "TODO(es) What do you want to play?",
-        TextKey::SearchClear => "TODO(es) Clear",
+        TextKey::DevicesListeningHere => "Escuchando en este dispositivo",
+        TextKey::DevicesRestricted => "Restringido",
+        TextKey::DevicesPlayHere => "Reproducir aquí",
+        TextKey::QueueRecentTab => "Recientes",
+        TextKey::QueueSavePlaylist => "Guardar como Playlist",
+        TextKey::QueueClear => "Vaciar cola",
+        TextKey::QueueNowPlaying => "En reproducción",
+        TextKey::QueueNothingQueued => "La cola está vacía",
+        TextKey::QueueNothingQueuedDetail => "Las canciones en cola aparecerán aquí.",
+        TextKey::QueuePlayingNext => "A continuación",
+        TextKey::QueueNextUp => "Después",
+        TextKey::QueueNoRecentPlays => "No hay reproducciones recientes",
+        TextKey::QueueNoRecentPlaysDetail => "Las canciones reproducidas aparecerán aquí.",
+        TextKey::PlayerNothingPlaying => "No hay nada en reproducción",
+        TextKey::PlayerPickSomething => "Elige una canción, un álbum o una Playlist",
+        TextKey::PlayerRemoveLiked => "Quitar de Canciones favoritas",
+        TextKey::PlayerSaveLiked => "Guardar en Canciones favoritas",
+        TextKey::PlayerShuffle => "Orden aleatorio",
+        TextKey::PlayerShuffleOn => "Orden aleatorio",
+        TextKey::PlayerPrevious => "Anterior",
+        TextKey::PlayerNext => "Siguiente",
+        TextKey::PlayerRepeat => "Repetir",
+        TextKey::PlayerRepeatOne => "Repetir una",
+        TextKey::PlayerRepeatOff => "Desactivar repetición",
+        TextKey::PlayerPositionAccessibility => "Posición de reproducción (%)",
+        TextKey::PlayerVolumeAccessibility => "Volumen (%)",
+        TextKey::PlayerUnmute => "Activar sonido",
+        TextKey::PlayerMute => "Silenciar",
+        TextKey::PlayerConnectDevice => "Conectar a un dispositivo",
+        TextKey::TopbarShowSidebarControl => "Mostrar barra lateral (Ctrl+B)",
+        TextKey::TopbarShowSidebarCommand => "Mostrar barra lateral (Cmd+B)",
+        TextKey::TopbarSearchHint => "¿Qué quieres reproducir?",
+        TextKey::SearchClear => "Borrar",
         TextKey::PlaylistSongsUnavailableThirdParty => {
-            "TODO(es) Spotify doesn't make this playlist's songs available to third-party apps."
+            "Spotify no permite que las aplicaciones de terceros accedan a las canciones de esta Playlist."
         }
-        TextKey::TopbarMilkdropControl => "TODO(es) MilkDrop visualiser (Ctrl+Shift+K)",
-        TextKey::TopbarMilkdropCommand => "TODO(es) MilkDrop visualiser (Cmd+Shift+K)",
-        TextKey::TopbarWinampControl => "TODO(es) Winamp mini player (Ctrl+M)",
-        TextKey::TopbarWinampCommand => "TODO(es) Winamp mini player (Cmd+Shift+M)",
-        TextKey::TopbarWaitingSpotify => "TODO(es) Waiting for Spotify…",
-        TextKey::TopbarAnotherDevice => "TODO(es) another device",
-        TextKey::CommonSongs => "TODO(es) Songs",
-        TextKey::CommonArtists => "TODO(es) Artists",
-        TextKey::CommonAlbums => "TODO(es) Albums",
-        TextKey::CommonPlaylists => "TODO(es) Playlists",
-        TextKey::CommonPodcasts => "TODO(es) Podcasts",
-        TextKey::CommonEpisodes => "TODO(es) Episodes",
-        TextKey::CommonLikedSongs => "TODO(es) Liked Songs",
-        TextKey::CommonRemoveLibrary => "TODO(es) Remove from Your Library",
-        TextKey::CommonAddLibrary => "TODO(es) Add to Your Library",
-        TextKey::AlbumKindSingle => "TODO(es) Single",
-        TextKey::AlbumKindCompilation => "TODO(es) Compilation",
-        TextKey::AlbumKindAppearsOn => "TODO(es) Appears On",
-        TextKey::AlbumKindAlbum => "TODO(es) Album",
-        TextKey::DiscographyFilterAll => "TODO(es) All",
-        TextKey::DiscographyFilterAlbums => "TODO(es) Albums",
-        TextKey::DiscographyFilterSingles => "TODO(es) Singles & EPs",
-        TextKey::DiscographyFilterAppearsOn => "TODO(es) Appears On",
-        TextKey::ArtistPopular => "TODO(es) Popular",
-        TextKey::ArtistNoPopularSongs => "TODO(es) No popular songs to show.",
-        TextKey::ArtistDiscography => "TODO(es) Discography",
-        TextKey::ArtistNothingCategory => "TODO(es) Nothing in this category.",
-        TextKey::ArtistFansAlsoLike => "TODO(es) Fans also like",
-        TextKey::ShowPlayLatest => "TODO(es) Play latest episode",
-        TextKey::ShowFollowPodcast => "TODO(es) Follow podcast",
-        TextKey::ShowAbout => "TODO(es) About",
-        TextKey::ShowAllEpisodes => "TODO(es) All episodes",
-        TextKey::ShowPlayed => "TODO(es) Played",
-        TextKey::HomeMadeForYou => "TODO(es) Made for you",
-        TextKey::HomeShelfLoadError => "TODO(es) Couldn't load this shelf",
-        TextKey::HomeRecentlyPlayed => "TODO(es) Recently played",
-        TextKey::HomeTopArtists => "TODO(es) Your top artists",
-        TextKey::HomeTopSongs => "TODO(es) Your top songs",
-        TextKey::HomeShowMoreTopSongs => "TODO(es) Show more top songs",
-        TextKey::HomeRecommended => "TODO(es) Recommended for you",
-        TextKey::SearchNoResultsDetail => "TODO(es) Check the spelling, or try fewer words.",
-        TextKey::SearchSpotify => "TODO(es) Search Spotify",
+        TextKey::TopbarMilkdropControl => "Visualizador MilkDrop (Ctrl+Shift+K)",
+        TextKey::TopbarMilkdropCommand => "Visualizador MilkDrop (Cmd+Shift+K)",
+        TextKey::TopbarWinampControl => "Minirreproductor Winamp (Ctrl+M)",
+        TextKey::TopbarWinampCommand => "Minirreproductor Winamp (Cmd+Shift+M)",
+        TextKey::TopbarWaitingSpotify => "Esperando a Spotify…",
+        TextKey::TopbarAnotherDevice => "otro dispositivo",
+        TextKey::CommonSongs => "Canciones",
+        TextKey::CommonArtists => "Artistas",
+        TextKey::CommonAlbums => "Álbumes",
+        TextKey::CommonPlaylists => "Playlists",
+        TextKey::CommonPodcasts => "Pódcasts",
+        TextKey::CommonEpisodes => "Episodios",
+        TextKey::CommonLikedSongs => "Canciones favoritas",
+        TextKey::CommonRemoveLibrary => "Quitar de tu biblioteca",
+        TextKey::CommonAddLibrary => "Añadir a tu biblioteca",
+        TextKey::AlbumKindSingle => "Sencillo",
+        TextKey::AlbumKindCompilation => "Recopilación",
+        TextKey::AlbumKindAppearsOn => "Aparece en",
+        TextKey::AlbumKindAlbum => "Álbum",
+        TextKey::DiscographyFilterAll => "Todo",
+        TextKey::DiscographyFilterAlbums => "Álbumes",
+        TextKey::DiscographyFilterSingles => "Sencillos y EP",
+        TextKey::DiscographyFilterAppearsOn => "Aparece en",
+        TextKey::ArtistPopular => "Popular",
+        TextKey::ArtistNoPopularSongs => "No hay canciones populares para mostrar.",
+        TextKey::ArtistDiscography => "Discografía",
+        TextKey::ArtistNothingCategory => "No hay nada en esta categoría.",
+        TextKey::ArtistFansAlsoLike => "A los fans también les gusta",
+        TextKey::ShowPlayLatest => "Reproducir el episodio más reciente",
+        TextKey::ShowFollowPodcast => "Seguir pódcast",
+        TextKey::ShowAbout => "Acerca de",
+        TextKey::ShowAllEpisodes => "Todos los episodios",
+        TextKey::ShowPlayed => "Reproducido",
+        TextKey::HomeMadeForYou => "Hecho para ti",
+        TextKey::HomeShelfLoadError => "No se pudo cargar esta sección",
+        TextKey::HomeRecentlyPlayed => "Reproducido recientemente",
+        TextKey::HomeTopArtists => "Tus artistas más escuchados",
+        TextKey::HomeTopSongs => "Tus canciones más escuchadas",
+        TextKey::HomeShowMoreTopSongs => "Mostrar más canciones populares",
+        TextKey::HomeRecommended => "Recomendado para ti",
+        TextKey::SearchNoResultsDetail => "Revisa la ortografía o usa menos palabras.",
+        TextKey::SearchSpotify => "Buscar en Spotify",
         TextKey::SearchSpotifyDetail => {
-            "TODO(es) Find songs, artists, albums, playlists, and podcasts."
+            "Encuentra canciones, artistas, álbumes, Playlists y pódcasts."
         }
-        TextKey::SearchRecent => "TODO(es) Recent searches",
-        TextKey::SearchTopResult => "TODO(es) Top result",
-        TextKey::LibraryNoSavedAlbums => "TODO(es) No saved albums",
-        TextKey::LibrarySavedAlbumsDetail => "TODO(es) Saved albums appear here.",
-        TextKey::LibraryNoFollowedArtists => "TODO(es) No followed artists",
-        TextKey::LibraryFollowedArtistsDetail => "TODO(es) Followed artists appear here.",
-        TextKey::LibraryNoPodcasts => "TODO(es) No podcasts yet",
-        TextKey::LibraryFollowedPodcastsDetail => "TODO(es) Followed podcasts appear here.",
-        TextKey::LibraryNoSavedEpisodes => "TODO(es) No saved episodes",
-        TextKey::LibrarySavedEpisodesDetail => "TODO(es) Saved episodes appear here.",
-        TextKey::GreetingMorning => "TODO(es) Good morning",
-        TextKey::GreetingAfternoon => "TODO(es) Good afternoon",
-        TextKey::GreetingEvening => "TODO(es) Good evening",
-        TextKey::DialogDeletePlaylist => "TODO(es) Delete playlist?",
-        TextKey::DialogRemoveLibrary => "TODO(es) Remove from Your Library?",
-        TextKey::DialogDelete => "TODO(es) Delete",
-        TextKey::DialogRemove => "TODO(es) Remove",
-        TextKey::DialogSongsAlreadyPlaylist => "TODO(es) Songs already in this playlist",
-        TextKey::DialogSongAlreadyPlaylist => "TODO(es) Song already in this playlist",
-        TextKey::DialogAddAnyway => "TODO(es) Add anyway",
-        TextKey::DialogDone => "TODO(es) Done",
-        TextKey::DialogPremiumTitle => "TODO(es) This account cannot play music here",
+        TextKey::SearchRecent => "Búsquedas recientes",
+        TextKey::SearchTopResult => "Resultado principal",
+        TextKey::LibraryNoSavedAlbums => "No hay álbumes guardados",
+        TextKey::LibrarySavedAlbumsDetail => "Los álbumes guardados aparecerán aquí.",
+        TextKey::LibraryNoFollowedArtists => "No sigues a ningún artista",
+        TextKey::LibraryFollowedArtistsDetail => "Los artistas que sigues aparecerán aquí.",
+        TextKey::LibraryNoPodcasts => "Aún no hay pódcasts",
+        TextKey::LibraryFollowedPodcastsDetail => "Los pódcasts que sigues aparecerán aquí.",
+        TextKey::LibraryNoSavedEpisodes => "No hay episodios guardados",
+        TextKey::LibrarySavedEpisodesDetail => "Los episodios guardados aparecerán aquí.",
+        TextKey::GreetingMorning => "Buenos días",
+        TextKey::GreetingAfternoon => "Buenas tardes",
+        TextKey::GreetingEvening => "Buenas noches",
+        TextKey::DialogDeletePlaylist => "¿Eliminar Playlist?",
+        TextKey::DialogRemoveLibrary => "¿Quitar de tu biblioteca?",
+        TextKey::DialogDelete => "Eliminar",
+        TextKey::DialogRemove => "Quitar",
+        TextKey::DialogSongsAlreadyPlaylist => "Canciones que ya están en esta Playlist",
+        TextKey::DialogSongAlreadyPlaylist => "La canción ya está en esta Playlist",
+        TextKey::DialogAddAnyway => "Añadir de todos modos",
+        TextKey::DialogDone => "Listo",
+        TextKey::DialogPremiumTitle => "Esta cuenta no puede reproducir música aquí",
         TextKey::DialogPremiumDetail => {
-            "TODO(es) Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Fastpotify."
+            "La reproducción requiere Spotify Premium. Las cuentas gratuitas pueden explorar y buscar, pero no reproducir música con Fastpotify."
         }
-        TextKey::DialogOk => "TODO(es) OK",
-        TextKey::DialogNewPlaylist => "TODO(es) New playlist",
-        TextKey::DialogName => "TODO(es) Name",
-        TextKey::DialogPlaylistNameHint => "TODO(es) My playlist",
-        TextKey::DialogPublicPlaylist => "TODO(es) Public playlist",
-        TextKey::DialogCreate => "TODO(es) Create",
-        TextKey::DialogEditDetails => "TODO(es) Edit details",
-        TextKey::DialogDescription => "TODO(es) Description",
-        TextKey::DialogOptionalDescription => "TODO(es) Optional description",
-        TextKey::DialogSave => "TODO(es) Save",
-        TextKey::CommonSearch => "TODO(es) Search",
-        TextKey::SidebarLibrary => "TODO(es) Library",
-        TextKey::SidebarHideControl => "TODO(es) Hide sidebar (Ctrl+B)",
-        TextKey::SidebarHideCommand => "TODO(es) Hide sidebar (Cmd+B)",
-        TextKey::SidebarCreatePlaylist => "TODO(es) Create a playlist",
-        TextKey::SidebarSearchLibrary => "TODO(es) Search Your Library",
-        TextKey::SidebarNothingHere => "TODO(es) Nothing here yet.",
-        TextKey::SidebarNoMatches => "TODO(es) No matches.",
-        TextKey::SidebarUnpin => "TODO(es) Unpin",
-        TextKey::SidebarPinTop => "TODO(es) Pin to top",
-        TextKey::SidebarSortRecent => "TODO(es) Sort by recently played",
-        TextKey::SidebarHome => "TODO(es) Home",
-        TextKey::SidebarSearch => "TODO(es) Search",
-        TextKey::SidebarDefaultFolder => "TODO(es) Folder",
-        TextKey::SidebarFilterPlaylists => "TODO(es) Playlists",
-        TextKey::SidebarFilterAlbums => "TODO(es) Albums",
-        TextKey::SidebarFilterArtists => "TODO(es) Artists",
-        TextKey::SidebarFilterPodcasts => "TODO(es) Podcasts",
-        TextKey::SidebarLikedSongs => "TODO(es) Liked Songs",
-        TextKey::SidebarPlaylistKind => "TODO(es) Playlist",
-        TextKey::SidebarArtistKind => "TODO(es) Artist",
-        TextKey::SidebarPlay => "TODO(es) Play",
-        TextKey::MenuPlayNext => "TODO(es) Play next",
-        TextKey::MenuAddPlaylist => "TODO(es) Add to playlist",
-        TextKey::MenuNewPlaylist => "TODO(es) New playlist",
-        TextKey::MenuSaveEpisode => "TODO(es) Save episode",
-        TextKey::MenuMoveUp => "TODO(es) Move up",
-        TextKey::MenuMoveDown => "TODO(es) Move down",
-        TextKey::MenuRemovePlaylist => "TODO(es) Remove from this playlist",
-        TextKey::MenuSongRadio => "TODO(es) Go to song radio",
-        TextKey::MenuGoArtist => "TODO(es) Go to artist",
-        TextKey::MenuGoAlbum => "TODO(es) Go to album",
-        TextKey::MenuGoPodcast => "TODO(es) Go to podcast",
-        TextKey::MenuCopyLink => "TODO(es) Copy link",
-        TextKey::MenuOpenSpotify => "TODO(es) Open in Spotify",
-        TextKey::MenuShufflePlay => "TODO(es) Shuffle play",
-        TextKey::MenuUnfollow => "TODO(es) Unfollow",
-        TextKey::TableSortPlaylistOrder => "TODO(es) Sort by playlist order",
-        TextKey::TableOriginalOrderReversed => "TODO(es) Original order, reversed",
-        TextKey::TableAddedBy => "TODO(es) ADDED BY",
-        TextKey::TableDateAdded => "TODO(es) DATE ADDED",
-        TextKey::TableSortDuration => "TODO(es) Sort by duration",
-        TextKey::TableTitle => "TODO(es) TITLE",
-        TextKey::TableAlbum => "TODO(es) ALBUM",
-        TextKey::CollectionShuffleOff => "TODO(es) Shuffle off",
-        TextKey::CollectionFilter => "TODO(es) Filter",
-        TextKey::CollectionGoSong => "TODO(es) Go to song",
-        TextKey::CollectionGo => "TODO(es) Go",
-        TextKey::CollectionNothingHere => "TODO(es) Nothing here yet",
-        TextKey::CollectionAddedSongs => "TODO(es) Added songs appear here.",
+        TextKey::DialogOk => "Aceptar",
+        TextKey::DialogNewPlaylist => "Nueva Playlist",
+        TextKey::DialogName => "Nombre",
+        TextKey::DialogPlaylistNameHint => "Mi Playlist",
+        TextKey::DialogPublicPlaylist => "Playlist pública",
+        TextKey::DialogCreate => "Crear",
+        TextKey::DialogEditDetails => "Editar detalles",
+        TextKey::DialogDescription => "Descripción",
+        TextKey::DialogOptionalDescription => "Descripción opcional",
+        TextKey::DialogSave => "Guardar",
+        TextKey::CommonSearch => "Buscar",
+        TextKey::SidebarLibrary => "Biblioteca",
+        TextKey::SidebarHideControl => "Ocultar barra lateral (Ctrl+B)",
+        TextKey::SidebarHideCommand => "Ocultar barra lateral (Cmd+B)",
+        TextKey::SidebarCreatePlaylist => "Crear una Playlist",
+        TextKey::SidebarSearchLibrary => "Buscar en Tu biblioteca",
+        TextKey::SidebarNothingHere => "Aún no hay nada aquí.",
+        TextKey::SidebarNoMatches => "No hay coincidencias.",
+        TextKey::SidebarUnpin => "Desfijar",
+        TextKey::SidebarPinTop => "Fijar arriba",
+        TextKey::SidebarSortRecent => "Ordenar por reproducción reciente",
+        TextKey::SidebarHome => "Inicio",
+        TextKey::SidebarSearch => "Buscar",
+        TextKey::SidebarDefaultFolder => "Carpeta",
+        TextKey::SidebarFilterPlaylists => "Playlists",
+        TextKey::SidebarFilterAlbums => "Álbumes",
+        TextKey::SidebarFilterArtists => "Artistas",
+        TextKey::SidebarFilterPodcasts => "Pódcasts",
+        TextKey::SidebarLikedSongs => "Canciones favoritas",
+        TextKey::SidebarPlaylistKind => "Playlist",
+        TextKey::SidebarArtistKind => "Artista",
+        TextKey::SidebarPlay => "Reproducir",
+        TextKey::MenuPlayNext => "Reproducir a continuación",
+        TextKey::MenuAddPlaylist => "Añadir a una Playlist",
+        TextKey::MenuNewPlaylist => "Nueva Playlist",
+        TextKey::MenuSaveEpisode => "Guardar episodio",
+        TextKey::MenuMoveUp => "Mover arriba",
+        TextKey::MenuMoveDown => "Mover abajo",
+        TextKey::MenuRemovePlaylist => "Quitar de esta Playlist",
+        TextKey::MenuSongRadio => "Ir a la radio de la canción",
+        TextKey::MenuGoArtist => "Ir al artista",
+        TextKey::MenuGoAlbum => "Ir al álbum",
+        TextKey::MenuGoPodcast => "Ir al pódcast",
+        TextKey::MenuCopyLink => "Copiar enlace",
+        TextKey::MenuOpenSpotify => "Abrir en Spotify",
+        TextKey::MenuShufflePlay => "Reproducir en orden aleatorio",
+        TextKey::MenuUnfollow => "Dejar de seguir",
+        TextKey::TableSortPlaylistOrder => "Ordenar según la Playlist",
+        TextKey::TableOriginalOrderReversed => "Orden original, invertido",
+        TextKey::TableAddedBy => "AÑADIDA POR",
+        TextKey::TableDateAdded => "FECHA DE ADICIÓN",
+        TextKey::TableSortDuration => "Ordenar por duración",
+        TextKey::TableTitle => "TÍTULO",
+        TextKey::TableAlbum => "ÁLBUM",
+        TextKey::CollectionShuffleOff => "Orden aleatorio desactivado",
+        TextKey::CollectionFilter => "Filtrar",
+        TextKey::CollectionGoSong => "Ir a la canción",
+        TextKey::CollectionGo => "Ir",
+        TextKey::CollectionNothingHere => "Aún no hay nada aquí",
+        TextKey::CollectionAddedSongs => "Las canciones añadidas aparecerán aquí.",
         TextKey::CollectionTopSongsDetail => {
-            "TODO(es) Your most-played tracks from the last four weeks."
+            "Tus canciones más reproducidas de las últimas cuatro semanas."
         }
-        TextKey::CollectionCollaborativePlaylist => "TODO(es) Collaborative Playlist",
-        TextKey::CollectionPublicPlaylist => "TODO(es) Public Playlist",
-        TextKey::ShortcutPlayPause => "TODO(es) Play or pause",
-        TextKey::ShortcutPreviousNext => "TODO(es) Previous or next",
-        TextKey::ShortcutSeek => "TODO(es) Seek 10 seconds",
-        TextKey::ShortcutVolume => "TODO(es) Volume up or down",
-        TextKey::ShortcutMute => "TODO(es) Mute or unmute",
-        TextKey::ShortcutLikePlaying => "TODO(es) Like or unlike the playing song",
-        TextKey::ShortcutShuffle => "TODO(es) Toggle shuffle",
-        TextKey::ShortcutRepeat => "TODO(es) Cycle repeat",
-        TextKey::ShortcutQueue => "TODO(es) Show the queue",
-        TextKey::ShortcutLyrics => "TODO(es) Show the lyrics",
-        TextKey::ShortcutSearch => "TODO(es) Search",
-        TextKey::ShortcutSidebar => "TODO(es) Show or hide the sidebar",
-        TextKey::ShortcutBackForward => "TODO(es) Back or forward",
-        TextKey::ShortcutHome => "TODO(es) Home",
-        TextKey::ShortcutLikedSongs => "TODO(es) Liked Songs",
-        TextKey::ShortcutPlayingArtist => "TODO(es) Go to the playing artist",
-        TextKey::ShortcutPlayingAlbum => "TODO(es) Go to the playing album",
-        TextKey::ShortcutWinamp => "TODO(es) Winamp mini player",
-        TextKey::ShortcutMilkdrop => "TODO(es) MilkDrop, under the mini player",
-        TextKey::ShortcutMilkdropFullscreen => "TODO(es) MilkDrop: fill the screen",
-        TextKey::ShortcutMilkdropNext => "TODO(es) MilkDrop: next preset",
-        TextKey::ShortcutMilkdropPrevious => "TODO(es) MilkDrop: previous preset",
-        TextKey::ShortcutMilkdropKeep => "TODO(es) MilkDrop: keep this preset",
-        TextKey::ShortcutMilkdropClose => "TODO(es) MilkDrop: leave full screen, or close",
-        TextKey::ShortcutSettings => "TODO(es) Settings",
-        TextKey::ShortcutHelp => "TODO(es) Keyboard shortcuts",
-        TextKey::ShortcutCloseWindow => "TODO(es) Close the window",
-        TextKey::ShortcutQuit => "TODO(es) Quit",
-        TextKey::MenuSelectionRemoveLiked => "TODO(es) Remove from Liked Songs",
-        TextKey::MenuSelectionSaveLiked => "TODO(es) Save to Liked Songs",
-        TextKey::MenuTrackRemoveLiked => "TODO(es) Remove from Liked Songs",
-        TextKey::MenuTrackSaveLiked => "TODO(es) Save to Liked Songs",
-        TextKey::TrackRowRemoveLiked => "TODO(es) Remove from Liked Songs",
-        TextKey::TrackRowSaveLiked => "TODO(es) Save to Liked Songs",
-        TextKey::TrackRowMore => "TODO(es) More",
-        TextKey::CollectionStarting => "TODO(es) Starting…",
-        TextKey::CollectionPlay => "TODO(es) Play",
-        TextKey::CollectionPause => "TODO(es) Pause",
-        TextKey::CollectionPlaylistKind => "TODO(es) Playlist",
-        TextKey::CollectionLikedSongs => "TODO(es) Liked Songs",
-        TextKey::CollectionPlaylistAddLibrary => "TODO(es) Add to Your Library",
-        TextKey::CollectionPlaylistRemoveLibrary => "TODO(es) Remove from Your Library",
-        TextKey::CollectionAlbumSaveLibrary => "TODO(es) Save to Your Library",
-        TextKey::CollectionAlbumRemoveLibrary => "TODO(es) Remove from Your Library",
-        TextKey::DateMonthJan => "TODO(es) Jan",
-        TextKey::DateMonthFeb => "TODO(es) Feb",
-        TextKey::DateMonthMar => "TODO(es) Mar",
-        TextKey::DateMonthApr => "TODO(es) Apr",
-        TextKey::DateMonthMay => "TODO(es) May",
-        TextKey::DateMonthJun => "TODO(es) Jun",
-        TextKey::DateMonthJul => "TODO(es) Jul",
-        TextKey::DateMonthAug => "TODO(es) Aug",
-        TextKey::DateMonthSep => "TODO(es) Sep",
-        TextKey::DateMonthOct => "TODO(es) Oct",
-        TextKey::DateMonthNov => "TODO(es) Nov",
-        TextKey::DateMonthDec => "TODO(es) Dec",
-        TextKey::NoticeUpToDate => "TODO(es) Fastpotify is up to date",
-        TextKey::NoticeQueueCleared => "TODO(es) Queue cleared",
-        TextKey::NoticePlaylistUpdated => "TODO(es) Playlist updated",
-        TextKey::NoticeAddedLibrary => "TODO(es) Added to Your Library",
-        TextKey::NoticeRemovedLibrary => "TODO(es) Removed from Your Library",
-        TextKey::NoticeAddedLikedSongs => "TODO(es) Added to Liked Songs",
-        TextKey::NoticeRemovedLikedSongs => "TODO(es) Removed from Liked Songs",
-        TextKey::NoticeFollowingArtist => "TODO(es) Following artist",
-        TextKey::NoticeUnfollowedArtist => "TODO(es) Unfollowed artist",
-        TextKey::NoticeSavedLibrary => "TODO(es) Saved to Your Library",
+        TextKey::CollectionCollaborativePlaylist => "Playlist colaborativa",
+        TextKey::CollectionPublicPlaylist => "Playlist pública",
+        TextKey::ShortcutPlayPause => "Reproducir o pausar",
+        TextKey::ShortcutPreviousNext => "Anterior o siguiente",
+        TextKey::ShortcutSeek => "Avanzar o retroceder 10 segundos",
+        TextKey::ShortcutVolume => "Subir o bajar el volumen",
+        TextKey::ShortcutMute => "Silenciar o activar el sonido",
+        TextKey::ShortcutLikePlaying => "Añadir o quitar la canción de Canciones favoritas",
+        TextKey::ShortcutShuffle => "Activar o desactivar el orden aleatorio",
+        TextKey::ShortcutRepeat => "Cambiar el modo de repetición",
+        TextKey::ShortcutQueue => "Mostrar la cola",
+        TextKey::ShortcutLyrics => "Mostrar la letra",
+        TextKey::ShortcutSearch => "Buscar",
+        TextKey::ShortcutSidebar => "Mostrar u ocultar la barra lateral",
+        TextKey::ShortcutBackForward => "Atrás o adelante",
+        TextKey::ShortcutHome => "Inicio",
+        TextKey::ShortcutLikedSongs => "Canciones favoritas",
+        TextKey::ShortcutPlayingArtist => "Ir al artista en reproducción",
+        TextKey::ShortcutPlayingAlbum => "Ir al álbum en reproducción",
+        TextKey::ShortcutWinamp => "Minirreproductor Winamp",
+        TextKey::ShortcutMilkdrop => "MilkDrop, bajo el minirreproductor",
+        TextKey::ShortcutMilkdropFullscreen => "MilkDrop: llenar la pantalla",
+        TextKey::ShortcutMilkdropNext => "MilkDrop: siguiente preajuste",
+        TextKey::ShortcutMilkdropPrevious => "MilkDrop: preajuste anterior",
+        TextKey::ShortcutMilkdropKeep => "MilkDrop: mantener este preajuste",
+        TextKey::ShortcutMilkdropClose => "MilkDrop: salir de pantalla completa o cerrar",
+        TextKey::ShortcutSettings => "Configuración",
+        TextKey::ShortcutHelp => "Atajos de teclado",
+        TextKey::ShortcutCloseWindow => "Cerrar la ventana",
+        TextKey::ShortcutQuit => "Salir",
+        TextKey::MenuSelectionRemoveLiked => "Quitar de Canciones favoritas",
+        TextKey::MenuSelectionSaveLiked => "Guardar en Canciones favoritas",
+        TextKey::MenuTrackRemoveLiked => "Quitar de Canciones favoritas",
+        TextKey::MenuTrackSaveLiked => "Guardar en Canciones favoritas",
+        TextKey::TrackRowRemoveLiked => "Quitar de Canciones favoritas",
+        TextKey::TrackRowSaveLiked => "Guardar en Canciones favoritas",
+        TextKey::TrackRowMore => "Más",
+        TextKey::CollectionStarting => "Iniciando…",
+        TextKey::CollectionPlay => "Reproducir",
+        TextKey::CollectionPause => "Pausar",
+        TextKey::CollectionPlaylistKind => "Playlist",
+        TextKey::CollectionLikedSongs => "Canciones favoritas",
+        TextKey::CollectionPlaylistAddLibrary => "Añadir a tu biblioteca",
+        TextKey::CollectionPlaylistRemoveLibrary => "Quitar de tu biblioteca",
+        TextKey::CollectionAlbumSaveLibrary => "Guardar en tu biblioteca",
+        TextKey::CollectionAlbumRemoveLibrary => "Quitar de tu biblioteca",
+        TextKey::DateMonthJan => "ene",
+        TextKey::DateMonthFeb => "feb",
+        TextKey::DateMonthMar => "mar",
+        TextKey::DateMonthApr => "abr",
+        TextKey::DateMonthMay => "may",
+        TextKey::DateMonthJun => "jun",
+        TextKey::DateMonthJul => "jul",
+        TextKey::DateMonthAug => "ago",
+        TextKey::DateMonthSep => "sep",
+        TextKey::DateMonthOct => "oct",
+        TextKey::DateMonthNov => "nov",
+        TextKey::DateMonthDec => "dic",
+        TextKey::NoticeUpToDate => "Fastpotify está actualizado",
+        TextKey::NoticeQueueCleared => "Se vació la cola",
+        TextKey::NoticePlaylistUpdated => "Playlist actualizada",
+        TextKey::NoticeAddedLibrary => "Se añadió a tu biblioteca",
+        TextKey::NoticeRemovedLibrary => "Se quitó de tu biblioteca",
+        TextKey::NoticeAddedLikedSongs => "Se añadió a Canciones favoritas",
+        TextKey::NoticeRemovedLikedSongs => "Se quitó de Canciones favoritas",
+        TextKey::NoticeFollowingArtist => "Ahora sigues al artista",
+        TextKey::NoticeUnfollowedArtist => "Dejaste de seguir al artista",
+        TextKey::NoticeSavedLibrary => "Se guardó en tu biblioteca",
         TextKey::NoticeEpisodePodcastUnavailable => {
-            "TODO(es) This episode's podcast is not on Spotify"
+            "El pódcast de este episodio no está en Spotify"
         }
-        TextKey::NoticeSongAlbumUnavailable => "TODO(es) This song's album is not on Spotify",
+        TextKey::NoticeSongAlbumUnavailable => "El álbum de esta canción no está en Spotify",
         TextKey::NoticeUnsupportedSpotifyLink => {
-            "TODO(es) Fastpotify cannot open this kind of Spotify link"
+            "Fastpotify no puede abrir este tipo de enlace de Spotify"
         }
-        TextKey::NoticeNothingPlaying => "TODO(es) Nothing is playing. Pick something first",
+        TextKey::NoticeNothingPlaying => "No hay nada en reproducción. Elige algo primero",
         TextKey::NoticeChooseDevice => {
-            "TODO(es) Choose a device, or enable playback on this computer"
+            "Elige un dispositivo o activa la reproducción en este equipo"
         }
-        TextKey::NoticePickSomething => "TODO(es) Pick something to play",
-        TextKey::NoticePickContext => "TODO(es) Pick a song, album, or playlist",
-        TextKey::NoticeLinkCopied => "TODO(es) Link copied",
-        TextKey::NoticeRestartingPlayback => "TODO(es) Restarting local playback",
+        TextKey::NoticePickSomething => "Elige algo para reproducir",
+        TextKey::NoticePickContext => "Elige una canción, un álbum o una Playlist",
+        TextKey::NoticeLinkCopied => "Enlace copiado",
+        TextKey::NoticeRestartingPlayback => "Reiniciando la reproducción local",
         TextKey::NoticeAudioDisconnected => {
-            "TODO(es) Spotify audio disconnected. Reconnecting local playback"
+            "El audio de Spotify se desconectó. Volviendo a conectar la reproducción local"
         }
-        TextKey::NoticePremiumRequired => "TODO(es) Local playback needs Spotify Premium",
+        TextKey::NoticePremiumRequired => "La reproducción local requiere Spotify Premium",
         TextKey::NoticeOpeningPlaybackSetup => {
-            "TODO(es) Opening your browser to set up local playback"
+            "Abriendo el navegador para configurar la reproducción local"
         }
-        TextKey::NoticeHistoryCleared => "TODO(es) Play history cleared",
+        TextKey::NoticeHistoryCleared => "Se borró el historial de reproducción",
         TextKey::NoticePersonalAppNudge => {
-            "TODO(es) Spotify is taking a while. Set up a personal app in Settings for a separate API quota"
+            "Spotify está tardando. Configura una aplicación personal en Configuración para tener una cuota de API aparte"
         }
-        TextKey::NoticeSignInExpired => {
-            "TODO(es) Your Spotify sign-in expired. Please sign in again."
+        TextKey::NoticeSignInExpired => "Tu sesión de Spotify venció. Inicia sesión de nuevo.",
+        TextKey::NoticeUpdateCheckFailedPrefix => "No se pudieron buscar actualizaciones",
+        TextKey::NoticeLocalPlaybackPrefix => "Reproducción local",
+        TextKey::NoticeProfileLoadFailedPrefix => "No se pudo cargar tu perfil",
+        TextKey::NoticeListDevicesFailedPrefix => "No se pudieron obtener los dispositivos",
+        TextKey::NoticeLoadMorePlaylistsFailedPrefix => "No se pudieron cargar más Playlists",
+        TextKey::NoticeCreatePlaylistFailedPrefix => "No se pudo crear la Playlist",
+        TextKey::NoticeUpdatePlaylistFailedPrefix => "No se pudo actualizar la Playlist",
+        TextKey::NoticePlaylistChangeFailedPrefix => "No se pudo cambiar la Playlist",
+        TextKey::NoticeLibraryUpdateFailedPrefix => "No se pudo actualizar tu biblioteca",
+        TextKey::NoticeCannotOpenSongPrefix => "No se puede abrir esta canción",
+        TextKey::NoticeCannotOpenEpisodePrefix => "No se puede abrir este episodio",
+        TextKey::NoticeSwitchDeviceFailedPrefix => "No se pudo cambiar de dispositivo",
+        TextKey::NoticeAddQueueFailedPrefix => "No se pudo añadir a la cola",
+        TextKey::NoticeClearArtworkFailedPrefix => "No se pudieron borrar las portadas",
+        TextKey::NoticeChooseDeviceHint => {
+            "Elige primero un dispositivo en el menú de dispositivos."
         }
-        TextKey::NoticeUpdateCheckFailedPrefix => "TODO(es) Couldn't check for updates",
-        TextKey::NoticeLocalPlaybackPrefix => "TODO(es) Local playback",
-        TextKey::NoticeProfileLoadFailedPrefix => "TODO(es) Couldn't load your profile",
-        TextKey::NoticeListDevicesFailedPrefix => "TODO(es) Couldn't list devices",
-        TextKey::NoticeLoadMorePlaylistsFailedPrefix => "TODO(es) Couldn't load more playlists",
-        TextKey::NoticeCreatePlaylistFailedPrefix => "TODO(es) Couldn't create the playlist",
-        TextKey::NoticeUpdatePlaylistFailedPrefix => "TODO(es) Couldn't update the playlist",
-        TextKey::NoticePlaylistChangeFailedPrefix => "TODO(es) Playlist change failed",
-        TextKey::NoticeLibraryUpdateFailedPrefix => "TODO(es) Couldn't update your library",
-        TextKey::NoticeCannotOpenSongPrefix => "TODO(es) Cannot open this song",
-        TextKey::NoticeCannotOpenEpisodePrefix => "TODO(es) Cannot open this episode",
-        TextKey::NoticeSwitchDeviceFailedPrefix => "TODO(es) Couldn't switch device",
-        TextKey::NoticeAddQueueFailedPrefix => "TODO(es) Couldn't add to queue",
-        TextKey::NoticeClearArtworkFailedPrefix => "TODO(es) Couldn't clear artwork",
-        TextKey::NoticeChooseDeviceHint => "TODO(es) Choose a device from the devices menu first.",
-        TextKey::NoticeRemoteStartFailed => "TODO(es) Couldn't start playback",
-        TextKey::NoticeRemotePauseFailed => "TODO(es) Couldn't pause",
-        TextKey::NoticeRemoteNextFailed => "TODO(es) Couldn't skip",
-        TextKey::NoticeRemotePreviousFailed => "TODO(es) Couldn't go back",
-        TextKey::NoticeRemoteSeekFailed => "TODO(es) Couldn't seek",
-        TextKey::NoticeRemoteVolumeFailed => "TODO(es) Couldn't change the volume",
-        TextKey::NoticeRemoteShuffleFailed => "TODO(es) Couldn't change shuffle",
-        TextKey::NoticeRemoteRepeatFailed => "TODO(es) Couldn't change repeat",
+        TextKey::NoticeRemoteStartFailed => "No se pudo iniciar la reproducción",
+        TextKey::NoticeRemotePauseFailed => "No se pudo pausar",
+        TextKey::NoticeRemoteNextFailed => "No se pudo saltar",
+        TextKey::NoticeRemotePreviousFailed => "No se pudo volver atrás",
+        TextKey::NoticeRemoteSeekFailed => "No se pudo cambiar la posición",
+        TextKey::NoticeRemoteVolumeFailed => "No se pudo cambiar el volumen",
+        TextKey::NoticeRemoteShuffleFailed => "No se pudo cambiar el orden aleatorio",
+        TextKey::NoticeRemoteRepeatFailed => "No se pudo cambiar la repetición",
         TextKey::NoticeLocalPlaybackNotSetUp => {
-            "TODO(es) Local playback isn't set up on this computer yet"
+            "La reproducción local aún no está configurada en este equipo"
         }
         TextKey::NoticeSpotifyPermissionsChanged => {
-            "TODO(es) Spotify permissions changed. Sign in again."
+            "Los permisos de Spotify cambiaron. Inicia sesión de nuevo."
         }
         TextKey::NoticeSpotifyAccountsDiffer => {
-            "TODO(es) The Spotify grants belong to different accounts"
+            "Las autorizaciones de Spotify pertenecen a cuentas distintas"
         }
-        TextKey::NoticePersonalClientIdRequired => {
-            "TODO(es) a personal Spotify Client ID is required"
+        TextKey::NoticePersonalClientIdRequired => "se requiere un Client ID personal de Spotify",
+        TextKey::NoticeRemovedFromPlaylist => "Se quitó de la Playlist",
+        TextKey::NoticePlaybackFailedPrefix => "Error de reproducción",
+        TextKey::NoticeSharedSignInFailedPrefix => {
+            "Falló el inicio de sesión compartido de Spotify"
         }
-        TextKey::NoticeRemovedFromPlaylist => "TODO(es) Removed from playlist",
-        TextKey::NoticePlaybackFailedPrefix => "TODO(es) Playback error",
-        TextKey::NoticeSharedSignInFailedPrefix => "TODO(es) Shared Spotify sign-in failed",
         TextKey::NoticePersonalAuthorizationFailedPrefix => {
-            "TODO(es) Personal app authorization failed"
+            "Falló la autorización de la aplicación personal"
         }
-        TextKey::NoticeSignInFailedPrefix => "TODO(es) Sign-in failed",
-        TextKey::TrayShowHide => "TODO(es) Show or hide Fastpotify",
-        TextKey::TrayPlay => "TODO(es) Play",
-        TextKey::TrayPause => "TODO(es) Pause",
-        TextKey::TrayNext => "TODO(es) Next",
-        TextKey::TrayPrevious => "TODO(es) Previous",
-        TextKey::TrayQuit => "TODO(es) Quit",
-        TextKey::AuthSuccessTitle => "TODO(es) Signed in to Fastpotify",
-        TextKey::AuthSuccessHeading => "TODO(es) You're signed in",
-        TextKey::AuthSuccessBody => "TODO(es) You can close this tab and go back to Fastpotify.",
-        TextKey::AuthFailureTitle => "TODO(es) Sign-in failed",
-        TextKey::AuthFailureHeading => "TODO(es) Sign-in didn't complete",
-        TextKey::AuthFailureReturn => "TODO(es) Return to Fastpotify and try again.",
-        TextKey::MilkdropPresetKept => "TODO(es) Preset kept",
-        TextKey::MilkdropPresetFree => "TODO(es) Preset free again",
-        TextKey::MilkdropRandomOrder => "TODO(es) Random order",
-        TextKey::MilkdropFolderOrder => "TODO(es) Folder order",
-        TextKey::MilkdropSongWhenChanged => "TODO(es) Song title: when it changes",
-        TextKey::MilkdropSongAlways => "TODO(es) Song title: always",
-        TextKey::MilkdropSongOff => "TODO(es) Song title: off",
-        TextKey::MilkdropNothingPlaying => "TODO(es) Nothing playing",
-        TextKey::MilkdropNoPreset => "TODO(es) No preset",
-        TextKey::MilkdropHelpPresets => "TODO(es) PRESETS",
-        TextKey::MilkdropHelpPlayback => "TODO(es) PLAYBACK",
-        TextKey::MilkdropHelpWindow => "TODO(es) WINDOW",
-        TextKey::MilkdropHelpShow => "TODO(es) SHOW",
-        TextKey::MilkdropHelpNextPreset => "TODO(es) Next preset",
-        TextKey::MilkdropHelpPreviousPreset => "TODO(es) Previous preset",
-        TextKey::MilkdropHelpBeatCut => "TODO(es) Next preset, cut on the beat",
-        TextKey::MilkdropHelpKeepPreset => "TODO(es) Keep this preset",
-        TextKey::MilkdropHelpOrder => "TODO(es) Random or folder order",
-        TextKey::MilkdropHelpRightClick => "TODO(es) Next preset",
-        TextKey::MilkdropHelpPlayPause => "TODO(es) Play or pause",
-        TextKey::MilkdropHelpPreviousNextSong => "TODO(es) Previous or next song",
-        TextKey::MilkdropHelpVolume => "TODO(es) Volume up or down",
-        TextKey::MilkdropHelpMute => "TODO(es) Mute or unmute",
-        TextKey::MilkdropHelpLike => "TODO(es) Like or unlike the playing song",
-        TextKey::MilkdropHelpShuffle => "TODO(es) Shuffle",
-        TextKey::MilkdropHelpFullscreen => "TODO(es) Full screen",
-        TextKey::MilkdropHelpLeaveFullscreen => "TODO(es) Leave full screen, or close",
-        TextKey::MilkdropHelpMoveResize => "TODO(es) Move it; drag a corner to resize",
-        TextKey::MilkdropHelpTheseKeys => "TODO(es) These keys",
-        TextKey::MilkdropHelpSongTitle => "TODO(es) Song title: on a change, always, off",
-        TextKey::MilkdropHelpPresetName => "TODO(es) This preset's name, on or off",
-        TextKey::MilkdropHelpFps => "TODO(es) FPS, on or off",
-        TextKey::MacMenuCheckUpdates => "TODO(es) Check for Updates…",
-        TextKey::MacMenuSettings => "TODO(es) Settings…",
-        TextKey::MacMenuFile => "TODO(es) File",
-        TextKey::MacMenuCloseWindow => "TODO(es) Close Window",
-        TextKey::MacMenuEdit => "TODO(es) Edit",
-        TextKey::MacMenuCut => "TODO(es) Cut",
-        TextKey::MacMenuCopy => "TODO(es) Copy",
-        TextKey::MacMenuPaste => "TODO(es) Paste",
-        TextKey::MacMenuSelectAll => "TODO(es) Select All",
-        TextKey::MacMenuPlayback => "TODO(es) Playback",
-        TextKey::MacMenuPlayPause => "TODO(es) Play / Pause",
-        TextKey::MacMenuNextTrack => "TODO(es) Next Track",
-        TextKey::MacMenuPreviousTrack => "TODO(es) Previous Track",
-        TextKey::MacMenuSeekForward => "TODO(es) Seek Forward (10s)",
-        TextKey::MacMenuSeekBackward => "TODO(es) Seek Backward (10s)",
-        TextKey::MacMenuShuffle => "TODO(es) Shuffle",
-        TextKey::MacMenuRepeat => "TODO(es) Repeat",
-        TextKey::MacMenuIncreaseVolume => "TODO(es) Increase Volume",
-        TextKey::MacMenuDecreaseVolume => "TODO(es) Decrease Volume",
-        TextKey::MacMenuMute => "TODO(es) Mute",
-        TextKey::MacMenuView => "TODO(es) View",
-        TextKey::MacMenuBack => "TODO(es) Back",
-        TextKey::MacMenuForward => "TODO(es) Forward",
-        TextKey::MacMenuHome => "TODO(es) Home",
-        TextKey::MacMenuSearch => "TODO(es) Search",
-        TextKey::MacMenuLikedSongs => "TODO(es) Liked Songs",
-        TextKey::MacMenuToggleSidebar => "TODO(es) Toggle Sidebar",
-        TextKey::MacMenuQueue => "TODO(es) Queue",
-        TextKey::MacMenuToggleFullscreen => "TODO(es) Toggle Full Screen",
-        TextKey::MacMenuWindow => "TODO(es) Window",
-        TextKey::MacMenuMinimize => "TODO(es) Minimize",
-        TextKey::MacMenuZoom => "TODO(es) Zoom",
-        TextKey::MacMenuBringAllToFront => "TODO(es) Bring All to Front",
-        TextKey::MacMenuHelp => "TODO(es) Help",
-        TextKey::MacMenuKeyboardShortcuts => "TODO(es) Keyboard Shortcuts",
-        TextKey::MacMenuGithub => "TODO(es) Fastpotify on GitHub",
-        TextKey::NoticeDownloadingMilkdropPacks => "TODO(es) Downloading MilkDrop preset packs",
-        TextKey::NoticeFetchPresetsFailedPrefix => "TODO(es) Couldn't fetch presets",
+        TextKey::NoticeSignInFailedPrefix => "Falló el inicio de sesión",
+        TextKey::TrayShowHide => "Mostrar u ocultar Fastpotify",
+        TextKey::TrayPlay => "Reproducir",
+        TextKey::TrayPause => "Pausar",
+        TextKey::TrayNext => "Siguiente",
+        TextKey::TrayPrevious => "Anterior",
+        TextKey::TrayQuit => "Salir",
+        TextKey::AuthSuccessTitle => "Sesión iniciada en Fastpotify",
+        TextKey::AuthSuccessHeading => "Iniciaste sesión",
+        TextKey::AuthSuccessBody => "Puedes cerrar esta pestaña y volver a Fastpotify.",
+        TextKey::AuthFailureTitle => "Falló el inicio de sesión",
+        TextKey::AuthFailureHeading => "No se completó el inicio de sesión",
+        TextKey::AuthFailureReturn => "Vuelve a Fastpotify e inténtalo de nuevo.",
+        TextKey::MilkdropPresetKept => "Preajuste fijado",
+        TextKey::MilkdropPresetFree => "Preajuste liberado",
+        TextKey::MilkdropRandomOrder => "Orden aleatorio",
+        TextKey::MilkdropFolderOrder => "Orden de la carpeta",
+        TextKey::MilkdropSongWhenChanged => "Título de la canción: al cambiar",
+        TextKey::MilkdropSongAlways => "Título de la canción: siempre",
+        TextKey::MilkdropSongOff => "Título de la canción: desactivado",
+        TextKey::MilkdropNothingPlaying => "No hay nada en reproducción",
+        TextKey::MilkdropNoPreset => "Sin preajuste",
+        TextKey::MilkdropHelpPresets => "PREAJUSTES",
+        TextKey::MilkdropHelpPlayback => "REPRODUCCIÓN",
+        TextKey::MilkdropHelpWindow => "VENTANA",
+        TextKey::MilkdropHelpShow => "MOSTRAR",
+        TextKey::MilkdropHelpNextPreset => "Siguiente preajuste",
+        TextKey::MilkdropHelpPreviousPreset => "Preajuste anterior",
+        TextKey::MilkdropHelpBeatCut => "Siguiente preajuste, cambio con el ritmo",
+        TextKey::MilkdropHelpKeepPreset => "Mantener este preajuste",
+        TextKey::MilkdropHelpOrder => "Orden aleatorio o de carpeta",
+        TextKey::MilkdropHelpRightClick => "Siguiente preajuste",
+        TextKey::MilkdropHelpPlayPause => "Reproducir o pausar",
+        TextKey::MilkdropHelpPreviousNextSong => "Canción anterior o siguiente",
+        TextKey::MilkdropHelpVolume => "Subir o bajar el volumen",
+        TextKey::MilkdropHelpMute => "Silenciar o activar el sonido",
+        TextKey::MilkdropHelpLike => "Añadir o quitar la canción de Canciones favoritas",
+        TextKey::MilkdropHelpShuffle => "Orden aleatorio",
+        TextKey::MilkdropHelpFullscreen => "Pantalla completa",
+        TextKey::MilkdropHelpLeaveFullscreen => "Salir de pantalla completa o cerrar",
+        TextKey::MilkdropHelpMoveResize => "Mover; arrastra una esquina para cambiar el tamaño",
+        TextKey::MilkdropHelpTheseKeys => "Mostrar estas teclas",
+        TextKey::MilkdropHelpSongTitle => "Título de la canción: al cambiar, siempre o desactivado",
+        TextKey::MilkdropHelpPresetName => "Nombre del preajuste: activado o desactivado",
+        TextKey::MilkdropHelpFps => "FPS: activados o desactivados",
+        TextKey::MacMenuCheckUpdates => "Buscar actualizaciones…",
+        TextKey::MacMenuSettings => "Configuración…",
+        TextKey::MacMenuFile => "Archivo",
+        TextKey::MacMenuCloseWindow => "Cerrar ventana",
+        TextKey::MacMenuEdit => "Editar",
+        TextKey::MacMenuCut => "Cortar",
+        TextKey::MacMenuCopy => "Copiar",
+        TextKey::MacMenuPaste => "Pegar",
+        TextKey::MacMenuSelectAll => "Seleccionar todo",
+        TextKey::MacMenuPlayback => "Reproducción",
+        TextKey::MacMenuPlayPause => "Reproducir / Pausar",
+        TextKey::MacMenuNextTrack => "Siguiente canción",
+        TextKey::MacMenuPreviousTrack => "Canción anterior",
+        TextKey::MacMenuSeekForward => "Avanzar (10s)",
+        TextKey::MacMenuSeekBackward => "Retroceder (10s)",
+        TextKey::MacMenuShuffle => "Orden aleatorio",
+        TextKey::MacMenuRepeat => "Repetir",
+        TextKey::MacMenuIncreaseVolume => "Subir volumen",
+        TextKey::MacMenuDecreaseVolume => "Bajar volumen",
+        TextKey::MacMenuMute => "Silenciar",
+        TextKey::MacMenuView => "Ver",
+        TextKey::MacMenuBack => "Atrás",
+        TextKey::MacMenuForward => "Adelante",
+        TextKey::MacMenuHome => "Inicio",
+        TextKey::MacMenuSearch => "Buscar",
+        TextKey::MacMenuLikedSongs => "Canciones favoritas",
+        TextKey::MacMenuToggleSidebar => "Mostrar u ocultar la barra lateral",
+        TextKey::MacMenuQueue => "Cola",
+        TextKey::MacMenuToggleFullscreen => "Activar o desactivar pantalla completa",
+        TextKey::MacMenuWindow => "Ventana",
+        TextKey::MacMenuMinimize => "Minimizar",
+        TextKey::MacMenuZoom => "Zoom",
+        TextKey::MacMenuBringAllToFront => "Traer todo al frente",
+        TextKey::MacMenuHelp => "Ayuda",
+        TextKey::MacMenuKeyboardShortcuts => "Atajos de teclado",
+        TextKey::MacMenuGithub => "Fastpotify en GitHub",
+        TextKey::NoticeDownloadingMilkdropPacks => "Descargando paquetes de preajustes de MilkDrop",
+        TextKey::NoticeFetchPresetsFailedPrefix => "No se pudieron obtener los preajustes",
     }
 }
 
 pub(super) fn message(message: &Message) -> String {
     match message {
-        Message::SettingsConnectedAs { username } => format!("Connected as {username}"),
-        Message::SettingsPlaybackStatus { status } => format!("Status: {status}"),
+        Message::SettingsConnectedAs { username } => format!("Sesión iniciada como {username}"),
+        Message::SettingsPlaybackStatus { status } => format!("Estado: {status}"),
         Message::SettingsSkinFolder { path } => {
-            format!("Installed skins are in {path}. Find more at the Winamp Skin Museum.")
+            format!("Los skins instalados están en {path}. Encuentra más en Winamp Skin Museum.")
         }
         Message::SettingsPresetFolder { count, path } => {
             let count = match count {
-                0 => "None yet".to_string(),
-                1 => "One preset".to_string(),
-                count => format!("{count} presets"),
+                0 => "Ninguno por ahora".to_string(),
+                1 => "Un preajuste".to_string(),
+                count => format!("{count} preajustes"),
             };
             format!(
-                "{count} in {path}. Add .milk files here. Fastpotify downloads presets when MilkDrop first opens with an empty folder."
+                "{count} en {path}. Añade aquí archivos .milk. Fastpotify descarga preajustes cuando MilkDrop se abre por primera vez con una carpeta vacía."
             )
         }
-        Message::SettingsGetPresetPack { name } => format!("Get {name}"),
+        Message::SettingsGetPresetPack { name } => format!("Obtener {name}"),
         Message::SettingsScreenRefreshRate { hz } => format!(
-            "Your screen refreshes at {hz} Hz. Higher rates do not add visible frames. Uncapped draws as fast as possible."
+            "Tu pantalla se actualiza a {hz} Hz. Las tasas más altas no añaden fotogramas visibles. Sin límite dibuja tan rápido como sea posible."
         ),
-        Message::SettingsStoredIn { path } => format!("Stored in {path}"),
+        Message::SettingsStoredIn { path } => format!("Guardado en {path}"),
         Message::SettingsHistoryStoredIn { path } => {
-            format!("Tracks played here are stored in {path}. This file is never uploaded.")
+            format!(
+                "Las canciones reproducidas aquí se guardan en {path}. Este archivo nunca se sube."
+            )
         }
         Message::SettingsCredentialsStoredIn { path } => {
-            format!("Credentials are kept in {path}")
+            format!("Las credenciales se guardan en {path}")
         }
         Message::SettingsVersion { version } => format!("Fastpotify {version}"),
         Message::SettingsFps { rate } => format!("{rate} fps"),
-        Message::SettingsFpsYourScreen { rate } => format!("{rate} fps, your screen"),
+        Message::SettingsFpsYourScreen { rate } => format!("{rate} fps, tu pantalla"),
         Message::LoginFooter { version } => {
-            format!("TODO(es) Fastpotify {version} • not affiliated with Spotify")
+            format!("Fastpotify {version} • no está afiliado con Spotify")
         }
         Message::LyricsFetchFailed { detail } => {
-            format!("TODO(es) Couldn't fetch the lyrics: {detail}")
+            format!("No se pudo obtener la letra: {detail}")
         }
-        Message::DeviceThisComputer { name } => format!("{name} TODO(es) (this computer)"),
-        Message::PlayingOnDevice { name } => format!("TODO(es) Playing on {name}"),
-        Message::UpdateToVersion { version } => format!("TODO(es) Update to {version}"),
+        Message::DeviceThisComputer { name } => format!("{name} (este equipo)"),
+        Message::PlayingOnDevice { name } => format!("Reproduciendo en {name}"),
+        Message::UpdateToVersion { version } => format!("Actualizar a {version}"),
         Message::UpdateAvailableDetail { version } => {
-            format!("TODO(es) Version {version} is available. Open the download page.")
+            format!("La versión {version} está disponible. Abre la página de descargas.")
         }
         Message::FollowerCount { count } => match count {
-            1 => "TODO(es) 1 follower".to_string(),
-            count => format!("TODO(es) {} followers", crate::util::format_count(*count)),
+            1 => "1 seguidor".to_string(),
+            count => format!("{} seguidores", crate::util::format_count(*count)),
         },
         Message::EpisodeCount { count } => match count {
-            1 => "TODO(es) 1 episode".to_string(),
-            count => format!("TODO(es) {count} episodes"),
+            1 => "1 episodio".to_string(),
+            count => format!("{count} episodios"),
         },
-        Message::EpisodeTimeLeft { time } => format!("TODO(es) {time} left"),
-        Message::SearchNoResults { query } => format!("TODO(es) No results for “{query}”"),
-        Message::SearchSongBy { artist } => format!("TODO(es) Song • {artist}"),
-        Message::SearchAlbumBy { artist } => format!("TODO(es) Album • {artist}"),
-        Message::SearchPlaylistBy { owner } => format!("TODO(es) Playlist • {owner}"),
-        Message::SearchPodcastBy { publisher } => format!("TODO(es) Podcast • {publisher}"),
-        Message::ByName { name } => format!("TODO(es) By {name}"),
-        Message::AlbumYearKind { year, kind } => format!("TODO(es) {year} • {kind}"),
+        Message::EpisodeTimeLeft { time } => format!("Quedan {time}"),
+        Message::SearchNoResults { query } => format!("No hay resultados para “{query}”"),
+        Message::SearchSongBy { artist } => format!("Canción • {artist}"),
+        Message::SearchAlbumBy { artist } => format!("Álbum • {artist}"),
+        Message::SearchPlaylistBy { owner } => format!("Playlist • {owner}"),
+        Message::SearchPodcastBy { publisher } => format!("Pódcast • {publisher}"),
+        Message::ByName { name } => format!("De {name}"),
+        Message::AlbumYearKind { year, kind } => format!("{year} • {kind}"),
         Message::DeletePlaylistDetail { name } => {
-            format!("TODO(es) Delete “{name}”? You can recover it from Spotify for 90 days.")
+            format!("¿Eliminar “{name}”? Puedes recuperarla desde Spotify durante 90 días.")
         }
         Message::RemovePlaylistDetail { name } => {
-            format!("TODO(es) “{name}” will no longer appear in Your Library.")
+            format!("“{name}” dejará de aparecer en tu biblioteca.")
         }
         Message::PlaylistSongsAdded { count } => match count {
-            1 => "TODO(es) 1 song will be added.".to_string(),
-            count => format!("TODO(es) {count} songs will be added."),
+            1 => "Se añadirá 1 canción.".to_string(),
+            count => format!("Se añadirán {count} canciones."),
         },
         Message::DuplicateSongs {
             playlist_name,
@@ -691,92 +717,100 @@ pub(super) fn message(message: &Message) -> String {
             selected_count,
         } => {
             let named = match names.as_slice() {
-                [] => "This song".to_string(),
+                [] => "Esta canción".to_string(),
                 [name] => format!("“{name}”"),
-                [first, second] => format!("“{first}” and “{second}”"),
+                [first, second] => format!("“{first}” y “{second}”"),
                 [first, second, rest @ ..] => {
-                    format!("“{first}”, “{second}”, and {} more", rest.len())
+                    format!("“{first}”, “{second}” y {} más", rest.len())
                 }
             };
-            let verb = if names.len() <= 1 { "is" } else { "are" };
-            let question = if *selected_count == 1 {
-                "Add it again?"
+            let verb = if names.len() <= 1 {
+                "ya está"
             } else {
-                "Add all selected songs anyway?"
+                "ya están"
             };
-            format!("TODO(es) {named} {verb} already in “{playlist_name}”. {question}")
+            let question = if *selected_count == 1 {
+                "¿Quieres añadirla de nuevo?"
+            } else {
+                "¿Quieres añadir todas las canciones seleccionadas de todos modos?"
+            };
+            format!("{named} {verb} en “{playlist_name}”. {question}")
         }
         Message::SidebarFolderPlaylistCount { count } => match count {
-            1 => "TODO(es) Folder • 1 playlist".to_string(),
-            count => format!("TODO(es) Folder • {count} playlists"),
+            1 => "Carpeta • 1 Playlist".to_string(),
+            count => format!("Carpeta • {count} Playlists"),
         },
         Message::SidebarPlaylistSongCount { count } => match count {
-            1 => "TODO(es) Playlist • 1 song".to_string(),
-            count => format!("TODO(es) Playlist • {count} songs"),
+            1 => "Playlist • 1 canción".to_string(),
+            count => format!("Playlist • {count} canciones"),
         },
-        Message::SidebarPlaylistBy { owner } => format!("TODO(es) Playlist • {owner}"),
-        Message::SidebarPodcastBy { publisher } => format!("TODO(es) Podcast • {publisher}"),
-        Message::SidebarAlbumBy { kind, artists } => format!("TODO(es) {kind} • {artists}"),
+        Message::SidebarPlaylistBy { owner } => format!("Playlist • {owner}"),
+        Message::SidebarPodcastBy { publisher } => format!("Pódcast • {publisher}"),
+        Message::SidebarAlbumBy { kind, artists } => format!("{kind} • {artists}"),
         Message::SidebarFolderState { name, collapsed } => format!(
-            "TODO(es) {name}, folder, {}",
-            if *collapsed { "collapsed" } else { "expanded" }
+            "{name}, carpeta, {}",
+            if *collapsed {
+                "contraída"
+            } else {
+                "expandida"
+            }
         ),
-        Message::SidebarPlayItem { name } => format!("TODO(es) Play {name}"),
+        Message::SidebarPlayItem { name } => format!("Reproducir {name}"),
         Message::MenuSelectionCount { count } => match count {
-            1 => "TODO(es) 1 song".to_string(),
-            count => format!("TODO(es) {count} songs"),
+            1 => "1 canción".to_string(),
+            count => format!("{count} canciones"),
         },
-        Message::SortBy { label } => format!("TODO(es) Sort by {label}"),
+        Message::SortBy { label } => format!("Ordenar por {label}"),
         Message::CollectionNamedContributors { names } => {
-            format!("TODO(es) with {}", names.join(" and "))
+            format!("con {}", names.join(" y "))
         }
         Message::CollectionOtherContributors { count } => match count {
-            1 => "TODO(es) and 1 other".to_string(),
-            count => format!("TODO(es) and {count} others"),
+            1 => "y 1 más".to_string(),
+            count => format!("y {count} más"),
         },
         Message::CollectionSongCount { count } => match count {
-            1 => "TODO(es) 1 song".to_string(),
-            count => format!("TODO(es) {} songs", crate::util::format_count(*count)),
+            1 => "1 canción".to_string(),
+            count => format!("{} canciones", crate::util::format_count(*count)),
         },
         Message::CollectionSongCountDuration { count, duration } => match count {
-            1 => format!("TODO(es) 1 song, {duration}"),
+            1 => format!("1 canción, {duration}"),
             count => format!(
-                "TODO(es) {} songs, {duration}",
+                "{} canciones, {duration}",
                 crate::util::format_count(*count)
             ),
         },
         Message::DurationHoursMinutes { hours, minutes } => {
-            format!("TODO(es) {hours} hr {minutes} min")
+            format!("{hours} h {minutes} min")
         }
         Message::DurationMinutesSeconds { minutes, seconds } => {
-            format!("TODO(es) {minutes} min {seconds} sec")
+            format!("{minutes} min {seconds} s")
         }
-        Message::DurationSeconds { seconds } => format!("TODO(es) {seconds} sec"),
+        Message::DurationSeconds { seconds } => format!("{seconds} s"),
         Message::EpisodeHoursMinutes { hours, minutes } => {
-            format!("TODO(es) {hours} hr {minutes} min")
+            format!("{hours} h {minutes} min")
         }
-        Message::EpisodeMinutes { minutes } => format!("TODO(es) {minutes} min"),
-        Message::DateDay { month, day, year } => format!("TODO(es) {month} {day}, {year}"),
-        Message::DateMonthYear { month, year } => format!("TODO(es) {month} {year}"),
-        Message::RelativeSeconds { count } => relative(*count, "second"),
-        Message::RelativeMinutes { count } => relative(*count, "minute"),
-        Message::RelativeHours { count } => relative(*count, "hour"),
-        Message::RelativeDays { count } => relative(*count, "day"),
-        Message::RelativeWeeks { count } => relative(*count, "week"),
+        Message::EpisodeMinutes { minutes } => format!("{minutes} min"),
+        Message::DateDay { month, day, year } => format!("{day} de {month} de {year}"),
+        Message::DateMonthYear { month, year } => format!("{month} de {year}"),
+        Message::RelativeSeconds { count } => relative(*count, "segundo"),
+        Message::RelativeMinutes { count } => relative(*count, "minuto"),
+        Message::RelativeHours { count } => relative(*count, "hora"),
+        Message::RelativeDays { count } => relative(*count, "día"),
+        Message::RelativeWeeks { count } => relative(*count, "semana"),
         Message::NoticeDetail { prefix, detail } => format!("{}: {detail}", text(*prefix)),
-        Message::NoticeReceiverReady { name } => format!("TODO(es) {name} is ready"),
-        Message::NoticeReceiverFailed { name, detail } => format!("TODO(es) {name}: {detail}"),
+        Message::NoticeReceiverReady { name } => format!("{name} está listo"),
+        Message::NoticeReceiverFailed { name, detail } => format!("{name}: {detail}"),
         Message::NoticeUpdateAvailable { version } => {
-            format!("TODO(es) Fastpotify {version} is available")
+            format!("Fastpotify {version} está disponible")
         }
-        Message::NoticePlaylistCreated { name } => format!("TODO(es) Created {name}"),
-        Message::NoticeItemPlayNext { name } => format!("TODO(es) {name} will play next"),
+        Message::NoticePlaylistCreated { name } => format!("Se creó {name}"),
+        Message::NoticeItemPlayNext { name } => format!("{name} se reproducirá a continuación"),
         Message::NoticeSongsPlayNext { count } => match count {
-            1 => "TODO(es) 1 song will play next".to_string(),
-            count => format!("TODO(es) {count} songs will play next"),
+            1 => "1 canción se reproducirá a continuación".to_string(),
+            count => format!("{count} canciones se reproducirán a continuación"),
         },
         Message::NoticeArtworkCleared { megabytes } => {
-            format!("TODO(es) Cleared {megabytes} MB of artwork")
+            format!("Se borraron {megabytes} MB de portadas")
         }
         Message::NoticeRemoteActionFailed {
             action,
@@ -785,32 +819,32 @@ pub(super) fn message(message: &Message) -> String {
         } => {
             if *choose_device {
                 format!(
-                    "TODO(es) {action}: {detail}. {}",
+                    "{action}: {detail}. {}",
                     text(TextKey::NoticeChooseDeviceHint)
                 )
             } else {
-                format!("TODO(es) {action}: {detail}.")
+                format!("{action}: {detail}.")
             }
         }
         Message::NoticeText { key } => text(*key).to_string(),
-        Message::NoticeAddedToPlaylist { name } => format!("TODO(es) Added to {name}"),
+        Message::NoticeAddedToPlaylist { name } => format!("Se añadió a {name}"),
         Message::TrackPlayAccessibility { name, subtitle } => {
-            format!("TODO(es) Play {name}, {subtitle}")
+            format!("Reproducir {name}, {subtitle}")
         }
-        Message::QueueRadioPlaylistName { track } => format!("{track} TODO(es) Radio"),
-        Message::QueuePlaylistName { date } => format!("TODO(es) Queue {date}"),
+        Message::QueueRadioPlaylistName { track } => format!("Radio de {track}"),
+        Message::QueuePlaylistName { date } => format!("Cola {date}"),
         Message::NoticeMilkdropPresetsAdded { count } => match count {
-            1 => "TODO(es) Added 1 MilkDrop preset".to_string(),
-            count => format!("TODO(es) Added {count} MilkDrop presets"),
+            1 => "Se añadió 1 preajuste de MilkDrop".to_string(),
+            count => format!("Se añadieron {count} preajustes de MilkDrop"),
         },
         Message::NoticeDownloadingPresetPack { name } => {
-            format!("TODO(es) Downloading {name} presets")
+            format!("Descargando los preajustes de {name}")
         }
-        Message::NoticeSkinAdded { name } => format!("TODO(es) Added {name} skin"),
+        Message::NoticeSkinAdded { name } => format!("Se añadió el skin {name}"),
     }
 }
 
 fn relative(count: i64, unit: &str) -> String {
     let plural = if count == 1 { "" } else { "s" };
-    format!("TODO(es) {count} {unit}{plural} ago")
+    format!("hace {count} {unit}{plural}")
 }

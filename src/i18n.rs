@@ -1044,4 +1044,41 @@ mod tests {
     fn spanish_catalogue_has_no_review_markers() {
         assert!(!include_str!("i18n/es.rs").contains("TODO(es)"));
     }
+
+    #[test]
+    fn representative_spanish_text_stays_exact() {
+        let translator = Translator::new(LanguageChoice::Spanish);
+        assert_eq!(translator.text(TextKey::SettingsTitle), "Configuración");
+        assert_eq!(translator.text(TextKey::CommonPlaylist), "Playlist");
+        assert_eq!(
+            translator.text(TextKey::CommonLikedSongs),
+            "Canciones favoritas"
+        );
+        assert_eq!(
+            translator.text(TextKey::NoticeQueueCleared),
+            "Se vació la cola"
+        );
+        assert_eq!(
+            translator.message(&Message::FollowerCount { count: 1 }),
+            "1 seguidor"
+        );
+        assert_eq!(
+            translator.message(&Message::FollowerCount { count: 0 }),
+            "0 seguidores"
+        );
+        assert_eq!(
+            translator.message(&Message::RelativeMinutes { count: 1 }),
+            "hace 1 minuto"
+        );
+        assert_eq!(
+            translator.message(&Message::RelativeMinutes { count: 3 }),
+            "hace 3 minutos"
+        );
+        assert_eq!(
+            translator.message(&Message::NoticeAddedToPlaylist {
+                name: "Viaje de Ana".into(),
+            }),
+            "Se añadió a Viaje de Ana"
+        );
+    }
 }

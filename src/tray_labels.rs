@@ -39,10 +39,10 @@ mod tests {
         let spanish = Translator::new(LanguageChoice::Spanish);
         let stopped = labels(spanish, false);
         let playing = labels(spanish, true);
-        assert_eq!(stopped.play_pause, "TODO(es) Play");
-        assert_eq!(playing.play_pause, "TODO(es) Pause");
-        assert_eq!(stopped.next, "TODO(es) Next");
-        assert_eq!(stopped.previous, "TODO(es) Previous");
-        assert_eq!(stopped.quit, "TODO(es) Quit");
+        assert_eq!(stopped.play_pause, "Reproducir");
+        assert_eq!(playing.play_pause, "Pausar");
+        assert_eq!(stopped.next, "Siguiente");
+        assert_eq!(stopped.previous, "Anterior");
+        assert_eq!(stopped.quit, "Salir");
     }
 }

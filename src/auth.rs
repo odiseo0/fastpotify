@@ -556,13 +556,13 @@ mod tests {
 
         let spanish = success_page_with_language(LanguageChoice::Spanish);
         assert!(spanish.contains("lang=\"es\""));
-        assert!(spanish.contains("TODO(es) Signed in to Fastpotify"));
+        assert!(spanish.contains("Sesión iniciada en Fastpotify"));
 
         let detail = "external_detail_123";
         let failure = failure_page_with_language(detail, LanguageChoice::Spanish);
         assert!(failure.contains("lang=\"es\""));
         assert!(failure.contains(detail));
-        assert!(failure.contains("TODO(es) Return to Fastpotify and try again."));
+        assert!(failure.contains("Vuelve a Fastpotify e inténtalo de nuevo."));
 
         let flow = begin_with_language(Grant::shared_web_api(), LanguageChoice::Spanish);
         assert_eq!(flow.language, LanguageChoice::Spanish);
